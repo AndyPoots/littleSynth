@@ -72,8 +72,11 @@ void ReverbEffect::setWetDry(float wetDry)
 void ReverbEffect::setPreDelay(float preDelayMs)
 {
     preDelayMs_ = preDelayMs;
+    if (preDelaySize_ == 0)
+        return;
+
     size_t delaySamples = static_cast<size_t>(preDelayMs_ * static_cast<float>(sampleRate_) / 1000.0f);
-    delaySamples = std::min(delaySamples, preDelaySize_ > 0 ? preDelaySize_ - 1 : size_t(0));
+    delaySamples = std::min(delaySamples, preDelaySize_ - 1);
 
     // Read position trails write position by delaySamples
     preDelayReadPos_ = (preDelayWritePos_ + preDelaySize_ - delaySamples) % preDelaySize_;

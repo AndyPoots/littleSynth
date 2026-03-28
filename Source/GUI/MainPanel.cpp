@@ -81,49 +81,67 @@ void MainPanel::resized()
 {
     auto bounds = getLocalBounds();
 
-    // Top bar: 30px
-    auto topBar = bounds.removeFromTop(30);
-    synthNameLabel_.setBounds(topBar.removeFromLeft(120).reduced(4));
-    auto masterArea = topBar.removeFromRight(120);
-    masterLevelLabel_.setBounds(masterArea.getX(), masterArea.getY(), 50, 30);
-    masterLevelSlider_.setBounds(masterArea.getX() + 50, masterArea.getY() + 4, 70, 22);
+    // Outer padding — breathing room around everything
+    bounds.reduce(10, 10);
 
-    // Bottom strip: effects 130px
-    auto bottomStrip = bounds.removeFromBottom(130);
-    effectsPanel_->setBounds(bottomStrip);
+    // Top bar: 36px
+    auto topBar = bounds.removeFromTop(36);
+    synthNameLabel_.setBounds(topBar.removeFromLeft(140).reduced(4));
+    auto masterArea = topBar.removeFromRight(140);
+    masterLevelLabel_.setBounds(masterArea.getX(), masterArea.getY(), 50, 36);
+    masterLevelSlider_.setBounds(masterArea.getX() + 50, masterArea.getY() + 6, 80, 24);
+
+    // Bottom strip: effects 140px + padding
+    auto bottomStrip = bounds.removeFromBottom(140);
+    effectsPanel_->setBounds(bottomStrip.reduced(4));
 
     // Visualizer fills remaining as background
     visualizer_.setBounds(bounds);
 
-    // Now overlay panels on top
+    // Now overlay panels on top — each column has generous inner padding
 
-    // Left column: oscillators (~260px wide)
-    auto leftCol = bounds.removeFromLeft(260);
-    const int oscH = leftCol.getHeight() / 3;
+    const int panelPad = 8;  // padding between sibling panels
+    const int outerPad = 6; // padding inside column edges
+
+    // Left column: oscillators (~280px wide)
+    auto leftCol = bounds.removeFromLeft(280);
+    const int oscH = (leftCol.getHeight() - outerPad * 2 - panelPad * 2) / 3;
     for (int i = 0; i < 3; ++i)
     {
         oscPanels_[static_cast<size_t>(i)]->setBounds(
-            leftCol.getX() + 4, leftCol.getY() + i * oscH + 2, leftCol.getWidth() - 8, oscH - 4);
+            leftCol.getX() + outerPad,
+            leftCol.getY() + outerPad + i * (oscH + panelPad),
+            leftCol.getWidth() - outerPad * 2,
+            oscH);
     }
 
-    // Right column: envelopes + LFOs (~200px wide)
-    auto rightCol = bounds.removeFromRight(200);
-    const int envH = (rightCol.getHeight() - 20) / 5; // 3 envs + 2 LFOs
+    // Right column: envelopes + LFOs (~220px wide)
+    auto rightCol = bounds.removeFromRight(220);
+    const int envH = (rightCol.getHeight() - outerPad * 2 - panelPad * 4) / 5; // 3 envs + 2 LFOs
     for (int i = 0; i < 3; ++i)
     {
         envPanels_[static_cast<size_t>(i)]->setBounds(
-            rightCol.getX() + 4, rightCol.getY() + i * envH + 2, rightCol.getWidth() - 8, envH - 4);
+            rightCol.getX() + outerPad,
+            rightCol.getY() + outerPad + i * (envH + panelPad),
+            rightCol.getWidth() - outerPad * 2,
+            envH);
     }
     for (int i = 0; i < 2; ++i)
     {
         lfoPanels_[static_cast<size_t>(i)]->setBounds(
-            rightCol.getX() + 4, rightCol.getY() + (3 + i) * envH + 2, rightCol.getWidth() - 8, envH - 4);
+            rightCol.getX() + outerPad,
+            rightCol.getY() + outerPad + (3 + i) * (envH + panelPad),
+            rightCol.getWidth() - outerPad * 2,
+            envH);
     }
 
     // Center column: Filter (top) + ModMatrix (bottom)
-    auto centerCol = bounds.reduced(2);
-    const int filterH = juce::jmin(170, centerCol.getHeight() / 3);
-    filterPanel_->setBounds(centerCol.getX() + 4, centerCol.getY(), centerCol.getWidth() - 8, filterH);
-    modMatrixPanel_->setBounds(centerCol.getX() + 4, centerCol.getY() + filterH + 4,
-                                centerCol.getWidth() - 8, centerCol.getHeight() - filterH - 4);
+    auto centerCol = bounds.reduced(outerPad);
+    const int filterH = juce::jmin(190, centerCol.getHeight() / 3);
+    filterPanel_->setBounds(centerCol.getX() + outerPad, centerCol.getY() + outerPad,
+                            centerCol.getWidth() - outerPad * 2, filterH);
+    modMatrixPanel_->setBounds(centerCol.getX() + outerPad,
+                               centerCol.getY() + filterH + outerPad + panelPad,
+                               centerCol.getWidth() - outerPad * 2,
+                               centerCol.getHeight() - filterH - outerPad - panelPad - outerPad);
 }

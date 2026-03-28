@@ -9,17 +9,17 @@ public:
     CustomLookAndFeel();
     ~CustomLookAndFeel() override = default;
 
-    // Colors
-    static constexpr uint32_t kBackground    = 0xFF1A1A2E;
-    static constexpr uint32_t kDarkerBg      = 0xFF0F1629;
-    static constexpr uint32_t kPanelBg       = 0xFF16213E;
+    // Colors — black background theme
+    static constexpr uint32_t kBackground    = 0xFF000000;
+    static constexpr uint32_t kDarkerBg      = 0xFF0A0A0A;
+    static constexpr uint32_t kPanelBg       = 0xFF141414;
     static constexpr uint32_t kAccent        = 0xFFE94560;
     static constexpr uint32_t kAccentBlue    = 0xFF0F3460;
-    static constexpr uint32_t kDarkerBlue    = 0xFF16213E;
+    static constexpr uint32_t kDarkerBlue    = 0xFF0A1520;
     static constexpr uint32_t kText          = 0xFFE0E0E0;
-    static constexpr uint32_t kTextDim       = 0xFF808090;
-    static constexpr uint32_t kTrackBg       = 0xFF2A2A3E;
-    static constexpr uint32_t kKnobBg        = 0xFF252540;
+    static constexpr uint32_t kTextDim       = 0xFF909090;
+    static constexpr uint32_t kTrackBg       = 0xFF1E1E1E;
+    static constexpr uint32_t kKnobBg        = 0xFF1E1E1E;
 
     // Rotary slider
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
