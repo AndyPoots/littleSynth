@@ -25,14 +25,14 @@ public:
     bool isMidiEffect() const override { return false; }
     double getTailLengthSeconds() const override { return 2.0; }
 
-    int getNumPrograms() override { return 1; }
-    int getCurrentProgram() override { return 0; }
-    void setCurrentProgram(int) override {}
-    const juce::String getProgramName(int) override { return {}; }
-    void changeProgramName(int, const juce::String&) override {}
+    int getNumPrograms() override;
+    int getCurrentProgram() override;
+    void setCurrentProgram(int index) override;
+    const juce::String getProgramName(int index) override;
+    void changeProgramName(int index, const juce::String& newName) override;
 
-    void getStateInformation(juce::MemoryBlock&) override {}
-    void setStateInformation(const void*, int) override {}
+    void getStateInformation(juce::MemoryBlock& destData) override;
+    void setStateInformation(const void* data, int sizeInBytes) override;
 
     // Public access for the editor to reach the APVTS
     juce::AudioProcessorValueTreeState& getAPVTS() { return *apvts_; }
@@ -45,6 +45,13 @@ private:
     VoiceManager synth_;
     EffectsChain effectsChain_;
     std::unique_ptr<juce::AudioProcessorValueTreeState> apvts_;
+
+    // Factory presets
+    int currentProgram_ = 0;
+    juce::StringArray presetNames_;
+    juce::Array<juce::ValueTree> factoryPresets_;
+
+    void createFactoryPresets();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LittleSynthProcessor)
 };
