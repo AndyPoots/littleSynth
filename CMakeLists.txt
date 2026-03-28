@@ -46,6 +46,15 @@ target_sources(littleSynth
         Source/Effects/EQ.cpp
         Source/Effects/Compressor.cpp
         Source/EffectsChain.cpp
+        Source/GUI/CustomLookAndFeel.cpp
+        Source/GUI/Visualizer.cpp
+        Source/GUI/OscillatorPanel.cpp
+        Source/GUI/FilterPanel.cpp
+        Source/GUI/EnvelopePanel.cpp
+        Source/GUI/LFOPanel.cpp
+        Source/GUI/ModMatrixPanel.cpp
+        Source/GUI/EffectsPanel.cpp
+        Source/GUI/MainPanel.cpp
 )
 
 target_compile_definitions(littleSynth

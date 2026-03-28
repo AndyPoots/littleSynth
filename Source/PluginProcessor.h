@@ -3,6 +3,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "VoiceManager.h"
+#include "EffectsChain.h"
 
 class LittleSynthProcessor : public juce::AudioProcessor
 {
@@ -33,11 +34,16 @@ public:
     void getStateInformation(juce::MemoryBlock&) override {}
     void setStateInformation(const void*, int) override {}
 
-    // Public access for the editor to reach the APVTS (future use)
+    // Public access for the editor to reach the APVTS
     juce::AudioProcessorValueTreeState& getAPVTS() { return *apvts_; }
+
+    // Access for the GUI to push state
+    VoiceManager& getSynth() { return synth_; }
+    EffectsChain* getEffectsChain() { return &effectsChain_; }
 
 private:
     VoiceManager synth_;
+    EffectsChain effectsChain_;
     std::unique_ptr<juce::AudioProcessorValueTreeState> apvts_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LittleSynthProcessor)

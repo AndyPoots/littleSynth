@@ -27,6 +27,7 @@ LittleSynthProcessor::~LittleSynthProcessor() = default;
 void LittleSynthProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     synth_.prepareToPlay(sampleRate, samplesPerBlock);
+    effectsChain_.init(sampleRate);
 }
 
 void LittleSynthProcessor::releaseResources()
@@ -184,6 +185,14 @@ void LittleSynthProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
     const float masterLevel = readFloat(*apvts_, "master_level");
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
         buffer.applyGain(ch, 0, buffer.getNumSamples(), masterLevel);
+
+    // --- Apply effects chain ---
+    if (buffer.getNumChannels() >= 2)
+    {
+        auto* left = buffer.getWritePointer(0);
+        auto* right = buffer.getWritePointer(1);
+        effectsChain_.process(left, right, buffer.getNumSamples());
+    }
 }
 
 // ---------------------------------------------------------------
