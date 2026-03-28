@@ -2,6 +2,7 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include "VoiceManager.h"
 
 class LittleSynthProcessor : public juce::AudioProcessor
 {
@@ -21,7 +22,7 @@ public:
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
-    double getTailLengthSeconds() const override { return 0.0; }
+    double getTailLengthSeconds() const override { return 2.0; }
 
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }
@@ -32,6 +33,12 @@ public:
     void getStateInformation(juce::MemoryBlock&) override {}
     void setStateInformation(const void*, int) override {}
 
+    // Public access for the editor to reach the APVTS (future use)
+    juce::AudioProcessorValueTreeState& getAPVTS() { return *apvts_; }
+
 private:
+    VoiceManager synth_;
+    std::unique_ptr<juce::AudioProcessorValueTreeState> apvts_;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LittleSynthProcessor)
 };

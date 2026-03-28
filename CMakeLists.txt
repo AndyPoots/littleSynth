@@ -33,6 +33,8 @@ target_sources(littleSynth
         Source/Filter.cpp
         Source/Envelope.cpp
         Source/LFO.cpp
+        Source/SynthVoice.cpp
+        Source/VoiceManager.cpp
 )
 
 target_compile_definitions(littleSynth
