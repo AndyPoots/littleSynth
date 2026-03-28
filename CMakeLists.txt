@@ -29,6 +29,10 @@ target_sources(littleSynth
     PRIVATE
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
+        Source/Oscillator.cpp
+        Source/Filter.cpp
+        Source/Envelope.cpp
+        Source/LFO.cpp
 )
 
 target_compile_definitions(littleSynth
