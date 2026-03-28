@@ -82,3 +82,7 @@ target_link_libraries(littleSynth
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags
 )
+
+# Static link C++ runtime so the plugin doesn't depend on the host's libstdc++
+# (e.g., Ardour snap bundles an older libstdc++ lacking GLIBCXX_3.4.32)
+target_link_options(littleSynth PRIVATE -static-libgcc -static-libstdc++)
