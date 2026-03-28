@@ -36,6 +36,8 @@ target_compile_definitions(littleSynth
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_ALSA=0
+        JUCE_JACK=0
 )
 
 target_include_directories(littleSynth
