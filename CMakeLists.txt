@@ -55,6 +55,7 @@ target_sources(littleSynth
         Source/GUI/ModMatrixPanel.cpp
         Source/GUI/EffectsPanel.cpp
         Source/GUI/MainPanel.cpp
+        Source/glibc_compat.c
 )
 
 target_compile_definitions(littleSynth
