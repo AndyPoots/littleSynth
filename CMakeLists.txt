@@ -35,6 +35,7 @@ target_sources(littleSynth
         Source/LFO.cpp
         Source/SynthVoice.cpp
         Source/VoiceManager.cpp
+        Source/Parameters.cpp
 )
 
 target_compile_definitions(littleSynth
