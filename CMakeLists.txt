@@ -37,6 +37,15 @@ target_sources(littleSynth
         Source/VoiceManager.cpp
         Source/Parameters.cpp
         Source/ModMatrix.cpp
+        Source/Effects/Chorus.cpp
+        Source/Effects/Phaser.cpp
+        Source/Effects/Flanger.cpp
+        Source/Effects/Distortion.cpp
+        Source/Effects/Delay.cpp
+        Source/Effects/Reverb.cpp
+        Source/Effects/EQ.cpp
+        Source/Effects/Compressor.cpp
+        Source/EffectsChain.cpp
 )
 
 target_compile_definitions(littleSynth
