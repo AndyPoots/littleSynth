@@ -34,6 +34,8 @@ public:
     void setSlope(Slope slope);
     void setCutoff(float freqHz);
     void setResonance(float res);
+    float getCutoff() const { return cutoff_; }
+    float getResonance() const { return resonance_; }
     void setDrive(float drive);
     void setEnvAmount(float amount);
     void setKeyTracking(float amount);

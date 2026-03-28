@@ -7,6 +7,7 @@
 #include "Filter.h"
 #include "Envelope.h"
 #include "LFO.h"
+#include "ModMatrix.h"
 
 class SynthSound : public juce::SynthesiserSound
 {
@@ -70,6 +71,13 @@ public:
     void setLFORate(int lfoIndex, float hz);
     void setLFODepth(int lfoIndex, float depth);
 
+    // --- Mod Matrix setters ---
+    void setModMatrixSource(int slot, ModMatrix::Source source);
+    void setModMatrixDestination(int slot, ModMatrix::Destination dest);
+    void setModMatrixDepth(int slot, float depth);
+    void setModMatrixBipolar(int slot, bool bipolar);
+    void setModMatrixActive(int slot, bool active);
+
 private:
     // DSP components
     SynthOscillator oscs_[3];
@@ -85,5 +93,9 @@ private:
     float velocity_ = 0.0f;
     int currentMidiNote_ = 0;
     int pitchWheelValue_ = 8192; // centre = no bend
+    float modWheelValue_ = 0.0f; // [0, 1]
     bool isActive_ = false;
+
+    // Modulation matrix
+    ModMatrix modMatrix_;
 };

@@ -36,6 +36,7 @@ target_sources(littleSynth
         Source/SynthVoice.cpp
         Source/VoiceManager.cpp
         Source/Parameters.cpp
+        Source/ModMatrix.cpp
 )
 
 target_compile_definitions(littleSynth
