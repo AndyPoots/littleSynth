@@ -41,6 +41,12 @@ public:
     VoiceManager& getSynth() { return synth_; }
     EffectsChain* getEffectsChain() { return &effectsChain_; }
 
+    /// Called from the audio thread: pushes a mono-mixed sample to the output FIFO
+    void pushOutputSample(float sample);
+
+    /// Called from the GUI thread: copies up to maxSamples from the output FIFO into dest
+    int readOutputSamples(float* dest, int maxSamples);
+
 private:
     VoiceManager synth_;
     EffectsChain effectsChain_;
@@ -50,6 +56,40 @@ private:
     int currentProgram_ = 0;
     juce::StringArray presetNames_;
     juce::Array<juce::ValueTree> factoryPresets_;
+
+    // Lock-free output FIFO for visualizer (power-of-2 size for cheap modulo)
+    static constexpr int kOutputFifoSize = 4096;
+    std::array<float, kOutputFifoSize> outputFifo_{};
+    std::atomic<int> outputWritePos_{0};
+
+    // Cached parameter values — only push to voices when changed.
+    // Defaults use sentinel values so the first processBlock pushes everything.
+    struct ParamCache
+    {
+        int   oscWaveform[3]  = { -1, -1, -1 };
+        float oscDetune[3]    = { -999.0f, -999.0f, -999.0f };
+        int   oscOctave[3]    = { -1, -1, -1 };
+        float oscLevel[3]     = { -1.0f, -1.0f, -1.0f };
+        float oscPulseWidth[3] = { -1.0f, -1.0f, -1.0f };
+        bool  oscOn[3]        = { true, true, true }; // force false→true or true→false mismatch
+
+        int   filterMode      = -1;
+        int   filterSlope     = -1;
+        float filterCutoff    = -1.0f;
+        float filterResonance = -1.0f;
+        float filterDrive     = -1.0f;
+        float filterEnvAmount = -999.0f;
+        float filterKeyTracking = -1.0f;
+
+        float envAttack[3]    = { -1.0f, -1.0f, -1.0f };
+        float envDecay[3]     = { -1.0f, -1.0f, -1.0f };
+        float envSustain[3]   = { -1.0f, -1.0f, -1.0f };
+        float envRelease[3]   = { -1.0f, -1.0f, -1.0f };
+
+        int   lfoShape[2]     = { -1, -1 };
+        float lfoRate[2]      = { -1.0f, -1.0f };
+        float lfoDepth[2]     = { -1.0f, -1.0f };
+    } paramCache_;
 
     void createFactoryPresets();
 

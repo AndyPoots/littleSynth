@@ -37,13 +37,14 @@ void LittleSynthEditor::timerCallback()
     // Push GUI state to processor
     mainPanel_.pushStateToProcessor();
 
-    // Push audio data to visualizer
+    // Push audio data to visualizer from the processor's output FIFO
     auto* visualizer = mainPanel_.getVisualizer();
     if (visualizer != nullptr)
     {
-        // Read the last known output levels from the processor
-        // For simplicity, we push a zero sample when no audio is playing
-        // In a real implementation you'd use a lock-free FIFO from the processor
-        // For now, this ensures the visualizer runs its repaint cycle
+        constexpr int kChunkSize = 256;
+        float temp[kChunkSize];
+        int numRead = processorRef.readOutputSamples(temp, kChunkSize);
+        for (int i = 0; i < numRead; ++i)
+            visualizer->pushSample(temp[i]);
     }
 }

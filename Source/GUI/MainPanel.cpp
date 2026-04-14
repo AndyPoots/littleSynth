@@ -135,13 +135,18 @@ void MainPanel::resized()
             envH);
     }
 
-    // Center column: Filter (top) + ModMatrix (bottom)
+    // Center column: Visualizer (top) + Filter (middle) + ModMatrix (bottom)
     auto centerCol = bounds.reduced(outerPad);
-    const int filterH = juce::jmin(190, centerCol.getHeight() / 3);
-    filterPanel_->setBounds(centerCol.getX() + outerPad, centerCol.getY() + outerPad,
+    const int vizH = juce::jmin(120, centerCol.getHeight() / 4);
+    visualizer_.setBounds(centerCol.getX() + outerPad, centerCol.getY() + outerPad,
+                          centerCol.getWidth() - outerPad * 2, vizH);
+
+    const int filterH = juce::jmin(190, (centerCol.getHeight() - vizH - panelPad) / 2);
+    filterPanel_->setBounds(centerCol.getX() + outerPad,
+                            centerCol.getY() + outerPad + vizH + panelPad,
                             centerCol.getWidth() - outerPad * 2, filterH);
     modMatrixPanel_->setBounds(centerCol.getX() + outerPad,
-                               centerCol.getY() + filterH + outerPad + panelPad,
+                               centerCol.getY() + outerPad + vizH + panelPad + filterH + panelPad,
                                centerCol.getWidth() - outerPad * 2,
-                               centerCol.getHeight() - filterH - outerPad - panelPad - outerPad);
+                               centerCol.getHeight() - vizH - filterH - panelPad * 2 - outerPad * 2);
 }

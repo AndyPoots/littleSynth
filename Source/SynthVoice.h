@@ -40,6 +40,7 @@ public:
     void setOscOctave(int oscIndex, int octaves);
     void setOscLevel(int oscIndex, float level);
     void setOscPulseWidth(int oscIndex, float pw);
+    void setOscEnabled(int oscIndex, bool enabled);
 
     // --- Filter parameter setters ---
     void setFilterMode(SynthFilter::Mode mode);
@@ -81,6 +82,7 @@ public:
 private:
     // DSP components
     SynthOscillator oscs_[3];
+    bool oscEnabled_[3] = { true, false, false };
     SynthFilter filter_;
     SynthEnvelope ampEnv_;
     SynthEnvelope filterEnv_;
@@ -98,4 +100,9 @@ private:
 
     // Modulation matrix
     ModMatrix modMatrix_;
+
+    // Anti-click fade ramps
+    float fadeGain_ = 0.0f;
+    bool isFadingOut_ = false;
+    static constexpr float kFadeRate = 0.008f; // ~125 samples ≈ 2.8ms at 44.1kHz
 };

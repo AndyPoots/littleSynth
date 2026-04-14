@@ -32,10 +32,11 @@ public:
     void setOctave(int octaves);
     void setLevel(float level);
     void setPulseWidth(float pw);
+    void resetPhase();
     float process();
 
 private:
-    float applyDetune(float freq) const;
+    void updateFreqMultiplier();
 
     double sampleRate_ = 44100.0;
     Waveform waveform_ = Sine;
@@ -52,4 +53,13 @@ private:
     // State for noise generation
     float noisePhase_ = 0.0f;
     float noiseFreq_ = 440.0f;
+
+    // Cached last-set values to avoid redundant DaisySP calls
+    float lastSetFreq_ = -1.0f;
+    Waveform lastSetWaveform_ = static_cast<Waveform>(-1);
+    float lastSetPW_ = -1.0f;
+
+    // Pre-computed detune+octave multiplier
+    float freqMultiplier_ = 1.0f;
+    bool freqMultiplierDirty_ = true;
 };

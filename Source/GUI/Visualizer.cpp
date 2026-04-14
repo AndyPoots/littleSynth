@@ -91,8 +91,12 @@ void Visualizer::paint(juce::Graphics& g)
     auto bounds = getLocalBounds().toFloat();
 
     // Background
-    g.setColour(juce::Colour(CustomLookAndFeel::kDarkerBg).withAlpha(0.9f));
+    g.setColour(juce::Colour(CustomLookAndFeel::kPanelBg));
     g.fillRoundedRectangle(bounds, 4.0f);
+
+    // Border
+    g.setColour(juce::Colour(CustomLookAndFeel::kAccent).withAlpha(0.3f));
+    g.drawRoundedRectangle(bounds, 4.0f, 1.0f);
 
     const float halfW = bounds.getWidth() * 0.5f;
     const float padding = 4.0f;
@@ -112,12 +116,12 @@ void Visualizer::paint(juce::Graphics& g)
         }
 
         // Waveform
-        g.setColour(juce::Colour(0xFF00FF88)); // green
-        juce::Path wavePath;
         const int numSamples = juce::jmin(512, kOscBufferSize);
         const float dx = oscBounds.getWidth() / (float)numSamples;
         bool started = false;
 
+        // Glow layer (thicker, translucent)
+        juce::Path glowPath;
         for (int i = 0; i < numSamples; ++i)
         {
             float val = displayBuffer_[static_cast<size_t>(i + (kOscBufferSize - numSamples))];
@@ -126,15 +130,20 @@ void Visualizer::paint(juce::Graphics& g)
 
             if (!started)
             {
-                wavePath.startNewSubPath(x, y);
+                glowPath.startNewSubPath(x, y);
                 started = true;
             }
             else
             {
-                wavePath.lineTo(x, y);
+                glowPath.lineTo(x, y);
             }
         }
-        g.strokePath(wavePath, juce::PathStrokeType(1.2f));
+        g.setColour(juce::Colour(0xFF00FF88).withAlpha(0.15f));
+        g.strokePath(glowPath, juce::PathStrokeType(4.0f));
+
+        // Main waveform line
+        g.setColour(juce::Colour(0xFF00FF88));
+        g.strokePath(glowPath, juce::PathStrokeType(1.4f));
 
         // Label
         g.setColour(juce::Colour(CustomLookAndFeel::kTextDim));

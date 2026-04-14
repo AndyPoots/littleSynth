@@ -66,6 +66,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         params.push_back(makeLinearFloat(
             p + "pulse_width", p + "Pulse Width",
             0.01f, 0.99f, 0.5f));
+
+        // On/Off toggle
+        params.push_back(std::make_unique<juce::AudioParameterBool>(
+            juce::ParameterID(p + "on", 1),
+            p + "On",
+            i == 0));  // default: osc1 on, osc2/3 off
     }
 
     // -----------------------------------------------------------------------
