@@ -4,6 +4,8 @@
 
 littleSynth is a VST3 synthesizer plugin built with [JUCE 8](https://github.com/juce-framework/JUCE) and [DaisySP](https://github.com/electro-smith/DaisySP). It packs a full subtractive synthesis signal chain — three oscillators, a multi-mode filter, a 16-slot modulation matrix, and eight insert effects — into a dark-themed GUI with a real-time oscilloscope and FFT spectrum analyzer.
 
+![littleSynth](Screenshots/littleSynth0.1.png)
+
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 ---
