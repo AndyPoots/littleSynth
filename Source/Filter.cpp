@@ -1,7 +1,5 @@
 #include "Filter.h"
-
-#include "Filters/ladder.h"
-#include "Filters/svf.h"
+#include <daisysp.h>
 
 #include <algorithm>
 #include <cmath>

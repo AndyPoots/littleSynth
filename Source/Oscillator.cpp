@@ -1,8 +1,5 @@
 #include "Oscillator.h"
-
-#include "Synthesis/oscillator.h"
-#include "Synthesis/variableshapeosc.h"
-#include "Utility/dsp.h"
+#include <daisysp.h>
 
 #include <algorithm>
 #include <cmath>

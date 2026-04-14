@@ -1,11 +1,15 @@
 #pragma once
 
 #include "EffectBase.h"
-#include "Effects/chorus.h"
+#include <memory>
+
+namespace daisysp { class Chorus; }
 
 class ChorusEffect : public EffectBase
 {
 public:
+    ChorusEffect() = default;
+    ~ChorusEffect() override;
     void init(double sampleRate) override;
     void process(float* left, float* right, int numSamples) override;
 
@@ -14,6 +18,6 @@ public:
     void setMix(float mix);
 
 private:
-    daisysp::Chorus chorus_;
+    std::unique_ptr<daisysp::Chorus> chorus_;
     float mix_ = 0.5f;
 };

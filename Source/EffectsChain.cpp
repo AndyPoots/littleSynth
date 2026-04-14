@@ -1,4 +1,5 @@
 #include "EffectsChain.h"
+#include <daisysp.h>
 
 EffectsChain::EffectsChain()
 {

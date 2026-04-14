@@ -1,21 +1,27 @@
 #include "Flanger.h"
+#include <daisysp.h>
+
+FlangerEffect::~FlangerEffect() = default;
 
 void FlangerEffect::init(double sampleRate)
 {
     sampleRate_ = sampleRate;
     float sr = static_cast<float>(sampleRate);
 
-    flangerL_.Init(sr);
-    flangerR_.Init(sr);
+    flangerL_ = std::make_unique<daisysp::Flanger>();
+    flangerR_ = std::make_unique<daisysp::Flanger>();
 
-    flangerL_.SetLfoFreq(0.5f);
-    flangerR_.SetLfoFreq(0.5f);
-    flangerL_.SetLfoDepth(0.5f);
-    flangerR_.SetLfoDepth(0.5f);
-    flangerL_.SetFeedback(0.5f);
-    flangerR_.SetFeedback(0.5f);
-    flangerL_.SetDelay(0.5f);
-    flangerR_.SetDelay(0.5f);
+    flangerL_->Init(sr);
+    flangerR_->Init(sr);
+
+    flangerL_->SetLfoFreq(0.5f);
+    flangerR_->SetLfoFreq(0.5f);
+    flangerL_->SetLfoDepth(0.5f);
+    flangerR_->SetLfoDepth(0.5f);
+    flangerL_->SetFeedback(0.5f);
+    flangerR_->SetFeedback(0.5f);
+    flangerL_->SetDelay(0.5f);
+    flangerR_->SetDelay(0.5f);
 }
 
 void FlangerEffect::process(float* left, float* right, int numSamples)
@@ -28,8 +34,8 @@ void FlangerEffect::process(float* left, float* right, int numSamples)
         float dryL = left[i];
         float dryR = right[i];
 
-        float wetL = flangerL_.Process(dryL);
-        float wetR = flangerR_.Process(dryR);
+        float wetL = flangerL_->Process(dryL);
+        float wetR = flangerR_->Process(dryR);
 
         left[i] = dryL * (1.0f - mix_) + wetL * mix_;
         right[i] = dryR * (1.0f - mix_) + wetR * mix_;
@@ -38,20 +44,20 @@ void FlangerEffect::process(float* left, float* right, int numSamples)
 
 void FlangerEffect::setRate(float rate)
 {
-    flangerL_.SetLfoFreq(rate);
-    flangerR_.SetLfoFreq(rate);
+    flangerL_->SetLfoFreq(rate);
+    flangerR_->SetLfoFreq(rate);
 }
 
 void FlangerEffect::setDepth(float depth)
 {
-    flangerL_.SetLfoDepth(depth);
-    flangerR_.SetLfoDepth(depth);
+    flangerL_->SetLfoDepth(depth);
+    flangerR_->SetLfoDepth(depth);
 }
 
 void FlangerEffect::setFeedback(float feedback)
 {
-    flangerL_.SetFeedback(feedback);
-    flangerR_.SetFeedback(feedback);
+    flangerL_->SetFeedback(feedback);
+    flangerR_->SetFeedback(feedback);
 }
 
 void FlangerEffect::setMix(float mix)

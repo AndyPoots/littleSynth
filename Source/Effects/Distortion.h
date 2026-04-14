@@ -1,11 +1,15 @@
 #pragma once
 
 #include "EffectBase.h"
-#include "Effects/overdrive.h"
+#include <memory>
+
+namespace daisysp { class Overdrive; }
 
 class DistortionEffect : public EffectBase
 {
 public:
+    DistortionEffect() = default;
+    ~DistortionEffect() override;
     void init(double sampleRate) override;
     void process(float* left, float* right, int numSamples) override;
 
@@ -14,8 +18,8 @@ public:
     void setMix(float mix);
 
 private:
-    daisysp::Overdrive overdriveL_;
-    daisysp::Overdrive overdriveR_;
+    std::unique_ptr<daisysp::Overdrive> overdriveL_;
+    std::unique_ptr<daisysp::Overdrive> overdriveR_;
     float drive_ = 0.5f;
     float tone_ = 0.5f;
     float mix_ = 0.5f;

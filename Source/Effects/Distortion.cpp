@@ -1,15 +1,22 @@
 #include "Distortion.h"
+#include <daisysp.h>
 #include <cmath>
+#include <algorithm>
+
+DistortionEffect::~DistortionEffect() = default;
 
 void DistortionEffect::init(double sampleRate)
 {
     sampleRate_ = sampleRate;
 
-    overdriveL_.Init();
-    overdriveR_.Init();
+    overdriveL_ = std::make_unique<daisysp::Overdrive>();
+    overdriveR_ = std::make_unique<daisysp::Overdrive>();
 
-    overdriveL_.SetDrive(0.5f);
-    overdriveR_.SetDrive(0.5f);
+    overdriveL_->Init();
+    overdriveR_->Init();
+
+    overdriveL_->SetDrive(0.5f);
+    overdriveR_->SetDrive(0.5f);
 
     toneStateL_ = 0.0f;
     toneStateR_ = 0.0f;
@@ -31,8 +38,8 @@ void DistortionEffect::process(float* left, float* right, int numSamples)
         float dryL = left[i];
         float dryR = right[i];
 
-        float wetL = overdriveL_.Process(dryL);
-        float wetR = overdriveR_.Process(dryR);
+        float wetL = overdriveL_->Process(dryL);
+        float wetR = overdriveR_->Process(dryR);
 
         // Apply tone filter (lowpass)
         toneStateL_ += alpha * (wetL - toneStateL_);
@@ -48,8 +55,8 @@ void DistortionEffect::process(float* left, float* right, int numSamples)
 void DistortionEffect::setDrive(float drive)
 {
     drive_ = drive;
-    overdriveL_.SetDrive(drive);
-    overdriveR_.SetDrive(drive);
+    overdriveL_->SetDrive(drive);
+    overdriveR_->SetDrive(drive);
 }
 
 void DistortionEffect::setTone(float tone)

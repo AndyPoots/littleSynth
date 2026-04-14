@@ -1,8 +1,7 @@
 #include "LFO.h"
+#include <daisysp.h>
 
-#include "Synthesis/oscillator.h"
-#include "Utility/dsp.h"
-
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 

@@ -29,6 +29,9 @@ void LittleSynthProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     synth_.prepareToPlay(sampleRate, samplesPerBlock);
     effectsChain_.init(sampleRate);
+
+    // Kill any stuck notes from DAW plugin scanning or previous session
+    synth_.allNotesOff(0, true);
 }
 
 void LittleSynthProcessor::releaseResources()

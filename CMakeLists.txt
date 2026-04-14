@@ -55,7 +55,6 @@ target_sources(littleSynth
         Source/GUI/ModMatrixPanel.cpp
         Source/GUI/EffectsPanel.cpp
         Source/GUI/MainPanel.cpp
-        Source/glibc_compat.c
 )
 
 target_compile_definitions(littleSynth
@@ -85,4 +84,8 @@ target_link_libraries(littleSynth
 
 # Static link C++ runtime so the plugin doesn't depend on the host's libstdc++
 # (e.g., Ardour snap bundles an older libstdc++ lacking GLIBCXX_3.4.32)
-target_link_options(littleSynth PRIVATE -static-libgcc -static-libstdc++)
+# glibc_compat.c provides shims for GLIBC < 2.38 (Linux-only)
+if(UNIX AND NOT APPLE)
+    target_sources(littleSynth PRIVATE Source/glibc_compat.c)
+    target_link_options(littleSynth PRIVATE -static-libgcc -static-libstdc++)
+endif()

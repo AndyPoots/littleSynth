@@ -1,6 +1,6 @@
 #include "Envelope.h"
-
-#include "Control/adsr.h"
+#include <algorithm>
+#include <daisysp.h>
 
 // ---------------------------------------------------------------
 // Construction / destruction

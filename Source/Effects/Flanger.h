@@ -1,11 +1,15 @@
 #pragma once
 
 #include "EffectBase.h"
-#include "Effects/flanger.h"
+#include <memory>
+
+namespace daisysp { class Flanger; }
 
 class FlangerEffect : public EffectBase
 {
 public:
+    FlangerEffect() = default;
+    ~FlangerEffect() override;
     void init(double sampleRate) override;
     void process(float* left, float* right, int numSamples) override;
 
@@ -15,7 +19,7 @@ public:
     void setMix(float mix);
 
 private:
-    daisysp::Flanger flangerL_;
-    daisysp::Flanger flangerR_;
+    std::unique_ptr<daisysp::Flanger> flangerL_;
+    std::unique_ptr<daisysp::Flanger> flangerR_;
     float mix_ = 0.5f;
 };
