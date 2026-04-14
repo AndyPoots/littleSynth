@@ -34,9 +34,12 @@ void SynthVoice::startNote(int midiNoteNumber, float velocity,
     currentFrequency_ = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
     currentFrequency_ *= std::pow(2.0f, (pitchWheelValue_ - 8192) / 8192.0f);
 
-    // Set oscillator frequencies
+    // Reset oscillators to avoid phase discontinuity from previous note
     for (auto& osc : oscs_)
+    {
+        osc.resetPhase();
         osc.setFrequency(currentFrequency_);
+    }
 
     // Trigger envelopes
     ampEnv_.noteOn();
@@ -44,6 +47,8 @@ void SynthVoice::startNote(int midiNoteNumber, float velocity,
     modEnv_.noteOn();
 
     isActive_ = true;
+    isFadingOut_ = false;
+    fadeGain_ = 0.0f; // Start from silence, fade in
 }
 
 void SynthVoice::stopNote(float velocity, bool allowTailOff)
@@ -57,12 +62,8 @@ void SynthVoice::stopNote(float velocity, bool allowTailOff)
 
     if (!allowTailOff)
     {
-        // Immediate silence
-        ampEnv_.reset();
-        filterEnv_.reset();
-        modEnv_.reset();
-        clearCurrentNote();
-        isActive_ = false;
+        // Quick fade-out instead of instant kill to avoid click
+        isFadingOut_ = true;
     }
 }
 
@@ -150,6 +151,9 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
 
         for (int o = 0; o < 3; ++o)
         {
+            if (!oscEnabled_[o])
+                continue;
+
             // Pitch modulation is in semitones (depth scales the source value)
             float pitchMod = modMatrix_.getModulatedValue(oscPitchDests[o], 0.0f);
             float modFreq = currentFrequency_ * std::pow(2.0f, pitchMod / 12.0f);
@@ -163,14 +167,21 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
             ModMatrix::Destination::Osc3Level
         };
 
-        // 6. Mix 3 oscillators (equal weight: 1/3 each) with modulated levels
+        // 6. Mix enabled oscillators, normalized by active count
         float oscMix = 0.0f;
+        int activeOscCount = 0;
         for (int o = 0; o < 3; ++o)
         {
+            if (!oscEnabled_[o])
+                continue;
+
             float modLevel = modMatrix_.getModulatedValue(oscLevelDests[o], 1.0f);
             oscMix += oscs_[o].process() * modLevel;
+            activeOscCount++;
         }
-        oscMix *= (1.0f / 3.0f);
+
+        if (activeOscCount > 0)
+            oscMix *= (1.0f / static_cast<float>(activeOscCount));
 
         // 7. Get modulated filter parameters
         float modCutoff = modMatrix_.getModulatedValue(ModMatrix::Destination::FilterCutoff, 0.0f);
@@ -211,7 +222,32 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
         float modAmp = modMatrix_.getModulatedValue(ModMatrix::Destination::AmpLevel, 1.0f);
         float sample = filtered * ampEnv * velocity_ * modAmp;
 
-        // 10. Write stereo output
+        // 10. Apply fade ramp (anti-click: fade-in on note start, fade-out on steal)
+        if (isFadingOut_)
+        {
+            fadeGain_ -= kFadeRate;
+            if (fadeGain_ <= 0.0f)
+            {
+                fadeGain_ = 0.0f;
+                isActive_ = false;
+                isFadingOut_ = false;
+                clearCurrentNote();
+                for (int ch = 0; ch < numChannels; ++ch)
+                {
+                    auto* channelData = outputBuffer.getWritePointer(ch);
+                    for (int j = i; j < numSamples; ++j)
+                        channelData[startSample + j] = 0.0f;
+                }
+                return;
+            }
+        }
+        else if (fadeGain_ < 1.0f)
+        {
+            fadeGain_ = std::min(fadeGain_ + kFadeRate, 1.0f);
+        }
+        sample *= fadeGain_;
+
+        // 11. Write stereo output
         for (int ch = 0; ch < numChannels; ++ch)
         {
             outputBuffer.addSample(ch, startSample + i, sample);
@@ -272,6 +308,12 @@ void SynthVoice::setOscPulseWidth(int oscIndex, float pw)
 {
     if (oscIndex >= 0 && oscIndex < 3)
         oscs_[oscIndex].setPulseWidth(pw);
+}
+
+void SynthVoice::setOscEnabled(int oscIndex, bool enabled)
+{
+    if (oscIndex >= 0 && oscIndex < 3)
+        oscEnabled_[oscIndex] = enabled;
 }
 
 // ---------------------------------------------------------------

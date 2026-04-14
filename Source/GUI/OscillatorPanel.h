@@ -38,5 +38,8 @@ private:
     juce::Label pulseWidthLabel_;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> pulseWidthAttachment_;
 
+    juce::ToggleButton onToggle_;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> onAttachment_;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscillatorPanel)
 };

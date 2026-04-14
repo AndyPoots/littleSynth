@@ -121,63 +121,196 @@ void LittleSynthProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 {
     juce::ScopedNoDenormals noDenormals;
 
-    // --- Push parameters to all voices ---
+    // --- Push parameters to voices only when changed ---
     const char* oscPrefixes[] = { "osc1_", "osc2_", "osc3_" };
     const char* lfoPrefixes[] = { "lfo1_", "lfo2_" };
+    const char* envPrefixes[] = { "amp_env_", "filter_env_", "mod_env_" };
 
-    for (int v = 0; v < synth_.getNumVoices(); ++v)
+    auto pushToVoices = [this](auto fn) {
+        for (int v = 0; v < synth_.getNumVoices(); ++v)
+            if (auto* voice = dynamic_cast<SynthVoice*>(synth_.getVoice(v)))
+                fn(voice);
+    };
+
+    // Oscillator parameters
+    for (int osc = 0; osc < 3; ++osc)
     {
-        auto* voice = synth_.getVoice(v);
-        if (voice == nullptr) continue;
+        auto p = juce::String(oscPrefixes[osc]);
 
-        // -- Oscillators --
-        for (int osc = 0; osc < 3; ++osc)
+        int wf = readChoice(*apvts_, p + "waveform");
+        if (wf != paramCache_.oscWaveform[osc])
         {
-            auto p = juce::String(oscPrefixes[osc]);
-
-            voice->setOscWaveform(osc, oscWaveformFromChoice(readChoice(*apvts_, p + "waveform")));
-            voice->setOscDetune(osc, readFloat(*apvts_, p + "detune"));
-            voice->setOscOctave(osc, readChoice(*apvts_, p + "octave") - 2);  // choice 0..4 maps to -2..+2
-            voice->setOscLevel(osc, readFloat(*apvts_, p + "level"));
-            voice->setOscPulseWidth(osc, readFloat(*apvts_, p + "pulse_width"));
+            paramCache_.oscWaveform[osc] = wf;
+            auto waveform = oscWaveformFromChoice(wf);
+            pushToVoices([=](SynthVoice* v) { v->setOscWaveform(osc, waveform); });
         }
 
-        // -- Filter --
-        voice->setFilterMode(filterModeFromChoice(readChoice(*apvts_, "filter_mode")));
-        voice->setFilterSlope(filterSlopeFromChoice(readChoice(*apvts_, "filter_slope")));
-        voice->setFilterCutoff(readFloat(*apvts_, "filter_cutoff"));
-        voice->setFilterResonance(readFloat(*apvts_, "filter_resonance"));
-        voice->setFilterDrive(readFloat(*apvts_, "filter_drive"));
-        voice->setFilterEnvAmount(readFloat(*apvts_, "filter_env_amount"));
-        voice->setFilterKeyTracking(readFloat(*apvts_, "filter_key_tracking"));
-
-        // -- Envelopes --
-        // amp_env_
-        voice->setAmpAttack(readFloat(*apvts_, "amp_env_attack"));
-        voice->setAmpDecay(readFloat(*apvts_, "amp_env_decay"));
-        voice->setAmpSustain(readFloat(*apvts_, "amp_env_sustain"));
-        voice->setAmpRelease(readFloat(*apvts_, "amp_env_release"));
-
-        // filter_env_
-        voice->setFilterAttack(readFloat(*apvts_, "filter_env_attack"));
-        voice->setFilterDecay(readFloat(*apvts_, "filter_env_decay"));
-        voice->setFilterSustain(readFloat(*apvts_, "filter_env_sustain"));
-        voice->setFilterRelease(readFloat(*apvts_, "filter_env_release"));
-
-        // mod_env_
-        voice->setModAttack(readFloat(*apvts_, "mod_env_attack"));
-        voice->setModDecay(readFloat(*apvts_, "mod_env_decay"));
-        voice->setModSustain(readFloat(*apvts_, "mod_env_sustain"));
-        voice->setModRelease(readFloat(*apvts_, "mod_env_release"));
-
-        // -- LFOs --
-        for (int lfo = 0; lfo < 2; ++lfo)
+        float detune = readFloat(*apvts_, p + "detune");
+        if (detune != paramCache_.oscDetune[osc])
         {
-            auto p = juce::String(lfoPrefixes[lfo]);
+            paramCache_.oscDetune[osc] = detune;
+            pushToVoices([=](SynthVoice* v) { v->setOscDetune(osc, detune); });
+        }
 
-            voice->setLFOShape(lfo, lfoShapeFromChoice(readChoice(*apvts_, p + "shape")));
-            voice->setLFORate(lfo, readFloat(*apvts_, p + "rate"));
-            voice->setLFODepth(lfo, readFloat(*apvts_, p + "depth"));
+        int octChoice = readChoice(*apvts_, p + "octave");
+        if (octChoice != paramCache_.oscOctave[osc])
+        {
+            paramCache_.oscOctave[osc] = octChoice;
+            int octVal = octChoice - 2;
+            pushToVoices([=](SynthVoice* v) { v->setOscOctave(osc, octVal); });
+        }
+
+        float level = readFloat(*apvts_, p + "level");
+        if (level != paramCache_.oscLevel[osc])
+        {
+            paramCache_.oscLevel[osc] = level;
+            pushToVoices([=](SynthVoice* v) { v->setOscLevel(osc, level); });
+        }
+
+        float pw = readFloat(*apvts_, p + "pulse_width");
+        if (pw != paramCache_.oscPulseWidth[osc])
+        {
+            paramCache_.oscPulseWidth[osc] = pw;
+            pushToVoices([=](SynthVoice* v) { v->setOscPulseWidth(osc, pw); });
+        }
+
+        bool on = readFloat(*apvts_, p + "on") > 0.5f;
+        if (on != paramCache_.oscOn[osc])
+        {
+            paramCache_.oscOn[osc] = on;
+            pushToVoices([=](SynthVoice* v) { v->setOscEnabled(osc, on); });
+        }
+    }
+
+    // Filter parameters
+    {
+        int mode = readChoice(*apvts_, "filter_mode");
+        if (mode != paramCache_.filterMode)
+        {
+            paramCache_.filterMode = mode;
+            auto fm = filterModeFromChoice(mode);
+            pushToVoices([fm](SynthVoice* v) { v->setFilterMode(fm); });
+        }
+
+        int slope = readChoice(*apvts_, "filter_slope");
+        if (slope != paramCache_.filterSlope)
+        {
+            paramCache_.filterSlope = slope;
+            auto fs = filterSlopeFromChoice(slope);
+            pushToVoices([fs](SynthVoice* v) { v->setFilterSlope(fs); });
+        }
+
+        float cutoff = readFloat(*apvts_, "filter_cutoff");
+        if (cutoff != paramCache_.filterCutoff)
+        {
+            paramCache_.filterCutoff = cutoff;
+            pushToVoices([cutoff](SynthVoice* v) { v->setFilterCutoff(cutoff); });
+        }
+
+        float res = readFloat(*apvts_, "filter_resonance");
+        if (res != paramCache_.filterResonance)
+        {
+            paramCache_.filterResonance = res;
+            pushToVoices([res](SynthVoice* v) { v->setFilterResonance(res); });
+        }
+
+        float drive = readFloat(*apvts_, "filter_drive");
+        if (drive != paramCache_.filterDrive)
+        {
+            paramCache_.filterDrive = drive;
+            pushToVoices([drive](SynthVoice* v) { v->setFilterDrive(drive); });
+        }
+
+        float envAmt = readFloat(*apvts_, "filter_env_amount");
+        if (envAmt != paramCache_.filterEnvAmount)
+        {
+            paramCache_.filterEnvAmount = envAmt;
+            pushToVoices([envAmt](SynthVoice* v) { v->setFilterEnvAmount(envAmt); });
+        }
+
+        float kt = readFloat(*apvts_, "filter_key_tracking");
+        if (kt != paramCache_.filterKeyTracking)
+        {
+            paramCache_.filterKeyTracking = kt;
+            pushToVoices([kt](SynthVoice* v) { v->setFilterKeyTracking(kt); });
+        }
+    }
+
+    // Envelope parameters (amp, filter, mod)
+    for (int e = 0; e < 3; ++e)
+    {
+        auto p = juce::String(envPrefixes[e]);
+
+        float atk = readFloat(*apvts_, p + "attack");
+        if (atk != paramCache_.envAttack[e])
+        {
+            paramCache_.envAttack[e] = atk;
+            pushToVoices([e, atk](SynthVoice* v) {
+                if (e == 0)      v->setAmpAttack(atk);
+                else if (e == 1) v->setFilterAttack(atk);
+                else             v->setModAttack(atk);
+            });
+        }
+
+        float dec = readFloat(*apvts_, p + "decay");
+        if (dec != paramCache_.envDecay[e])
+        {
+            paramCache_.envDecay[e] = dec;
+            pushToVoices([e, dec](SynthVoice* v) {
+                if (e == 0)      v->setAmpDecay(dec);
+                else if (e == 1) v->setFilterDecay(dec);
+                else             v->setModDecay(dec);
+            });
+        }
+
+        float sus = readFloat(*apvts_, p + "sustain");
+        if (sus != paramCache_.envSustain[e])
+        {
+            paramCache_.envSustain[e] = sus;
+            pushToVoices([e, sus](SynthVoice* v) {
+                if (e == 0)      v->setAmpSustain(sus);
+                else if (e == 1) v->setFilterSustain(sus);
+                else             v->setModSustain(sus);
+            });
+        }
+
+        float rel = readFloat(*apvts_, p + "release");
+        if (rel != paramCache_.envRelease[e])
+        {
+            paramCache_.envRelease[e] = rel;
+            pushToVoices([e, rel](SynthVoice* v) {
+                if (e == 0)      v->setAmpRelease(rel);
+                else if (e == 1) v->setFilterRelease(rel);
+                else             v->setModRelease(rel);
+            });
+        }
+    }
+
+    // LFO parameters
+    for (int lfo = 0; lfo < 2; ++lfo)
+    {
+        auto p = juce::String(lfoPrefixes[lfo]);
+
+        int shape = readChoice(*apvts_, p + "shape");
+        if (shape != paramCache_.lfoShape[lfo])
+        {
+            paramCache_.lfoShape[lfo] = shape;
+            auto s = lfoShapeFromChoice(shape);
+            pushToVoices([lfo, s](SynthVoice* v) { v->setLFOShape(lfo, s); });
+        }
+
+        float rate = readFloat(*apvts_, p + "rate");
+        if (rate != paramCache_.lfoRate[lfo])
+        {
+            paramCache_.lfoRate[lfo] = rate;
+            pushToVoices([lfo, rate](SynthVoice* v) { v->setLFORate(lfo, rate); });
+        }
+
+        float depth = readFloat(*apvts_, p + "depth");
+        if (depth != paramCache_.lfoDepth[lfo])
+        {
+            paramCache_.lfoDepth[lfo] = depth;
+            pushToVoices([lfo, depth](SynthVoice* v) { v->setLFODepth(lfo, depth); });
         }
     }
 
@@ -197,6 +330,19 @@ void LittleSynthProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
         auto* right = buffer.getWritePointer(1);
         effectsChain_.process(left, right, buffer.getNumSamples());
     }
+
+    // --- Capture output for visualizer (mono mix) ---
+    const int numSamples = buffer.getNumSamples();
+    for (int i = 0; i < numSamples; ++i)
+    {
+        float mono = 0.0f;
+        if (buffer.getNumChannels() >= 2)
+            mono = (buffer.getSample(0, i) + buffer.getSample(1, i)) * 0.5f;
+        else if (buffer.getNumChannels() == 1)
+            mono = buffer.getSample(0, i);
+
+        pushOutputSample(mono);
+    }
 }
 
 // ---------------------------------------------------------------
@@ -206,6 +352,29 @@ void LittleSynthProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 juce::AudioProcessorEditor* LittleSynthProcessor::createEditor()
 {
     return new LittleSynthEditor(*this);
+}
+
+// ---------------------------------------------------------------
+// Output FIFO for visualizer
+// ---------------------------------------------------------------
+
+void LittleSynthProcessor::pushOutputSample(float sample)
+{
+    const int pos = outputWritePos_.load(std::memory_order_relaxed);
+    outputFifo_[static_cast<size_t>(pos) % kOutputFifoSize] = sample;
+    outputWritePos_.store((pos + 1) % kOutputFifoSize, std::memory_order_relaxed);
+}
+
+int LittleSynthProcessor::readOutputSamples(float* dest, int maxSamples)
+{
+    const int wp = outputWritePos_.load(std::memory_order_acquire);
+    const int available = juce::jmin(maxSamples, kOutputFifoSize);
+    for (int i = 0; i < available; ++i)
+    {
+        int idx = (wp - available + i + kOutputFifoSize) % kOutputFifoSize;
+        dest[i] = outputFifo_[static_cast<size_t>(idx)];
+    }
+    return available;
 }
 
 // ---------------------------------------------------------------
@@ -261,13 +430,13 @@ void LittleSynthProcessor::createFactoryPresets()
     factoryPresets_.add(makePreset("Init", {
         // Osc 1: Sine, center, level 1
         {"osc1_waveform",  0.0f}, {"osc1_detune", 0.0f}, {"osc1_octave", 2.0f},
-        {"osc1_level",     1.0f}, {"osc1_pulse_width", 0.5f},
+        {"osc1_level",     1.0f}, {"osc1_pulse_width", 0.5f}, {"osc1_on", 1.0f},
         // Osc 2: off
         {"osc2_waveform",  0.0f}, {"osc2_detune", 0.0f}, {"osc2_octave", 2.0f},
-        {"osc2_level",     0.0f}, {"osc2_pulse_width", 0.5f},
+        {"osc2_level",     0.0f}, {"osc2_pulse_width", 0.5f}, {"osc2_on", 0.0f},
         // Osc 3: off
         {"osc3_waveform",  0.0f}, {"osc3_detune", 0.0f}, {"osc3_octave", 2.0f},
-        {"osc3_level",     0.0f}, {"osc3_pulse_width", 0.5f},
+        {"osc3_level",     0.0f}, {"osc3_pulse_width", 0.5f}, {"osc3_on", 0.0f},
         // Filter: open lowpass
         {"filter_mode",    0.0f}, {"filter_slope", 1.0f}, {"filter_cutoff", 20000.0f},
         {"filter_resonance", 0.0f}, {"filter_drive", 1.0f}, {"filter_env_amount", 0.0f},
@@ -292,13 +461,13 @@ void LittleSynthProcessor::createFactoryPresets()
     factoryPresets_.add(makePreset("Warm Pad", {
         // Osc 1: Sawtooth
         {"osc1_waveform",  2.0f}, {"osc1_detune", 0.0f}, {"osc1_octave", 2.0f},
-        {"osc1_level",     0.7f}, {"osc1_pulse_width", 0.5f},
+        {"osc1_level",     0.7f}, {"osc1_pulse_width", 0.5f}, {"osc1_on", 1.0f},
         // Osc 2: Sawtooth, detuned +7 cents
         {"osc2_waveform",  2.0f}, {"osc2_detune", 7.0f}, {"osc2_octave", 2.0f},
-        {"osc2_level",     0.6f}, {"osc2_pulse_width", 0.5f},
+        {"osc2_level",     0.6f}, {"osc2_pulse_width", 0.5f}, {"osc2_on", 1.0f},
         // Osc 3: Triangle, one octave down for body
         {"osc3_waveform",  1.0f}, {"osc3_detune", 0.0f}, {"osc3_octave", 1.0f},
-        {"osc3_level",     0.3f}, {"osc3_pulse_width", 0.5f},
+        {"osc3_level",     0.3f}, {"osc3_pulse_width", 0.5f}, {"osc3_on", 1.0f},
         // Filter: warm lowpass
         {"filter_mode",    0.0f}, {"filter_slope", 1.0f}, {"filter_cutoff", 2000.0f},
         {"filter_resonance", 0.2f}, {"filter_drive", 1.0f}, {"filter_env_amount", 0.3f},
@@ -323,13 +492,13 @@ void LittleSynthProcessor::createFactoryPresets()
     factoryPresets_.add(makePreset("Bass", {
         // Osc 1: Sawtooth, one octave down
         {"osc1_waveform",  2.0f}, {"osc1_detune", 0.0f}, {"osc1_octave", 1.0f},
-        {"osc1_level",     1.0f}, {"osc1_pulse_width", 0.5f},
+        {"osc1_level",     1.0f}, {"osc1_pulse_width", 0.5f}, {"osc1_on", 1.0f},
         // Osc 2: Square, two octaves down for sub
         {"osc2_waveform",  3.0f}, {"osc2_detune", 0.0f}, {"osc2_octave", 0.0f},
-        {"osc2_level",     0.4f}, {"osc2_pulse_width", 0.5f},
+        {"osc2_level",     0.4f}, {"osc2_pulse_width", 0.5f}, {"osc2_on", 1.0f},
         // Osc 3: off
         {"osc3_waveform",  0.0f}, {"osc3_detune", 0.0f}, {"osc3_octave", 2.0f},
-        {"osc3_level",     0.0f}, {"osc3_pulse_width", 0.5f},
+        {"osc3_level",     0.0f}, {"osc3_pulse_width", 0.5f}, {"osc3_on", 0.0f},
         // Filter: tight lowpass with envelope
         {"filter_mode",    0.0f}, {"filter_slope", 1.0f}, {"filter_cutoff", 500.0f},
         {"filter_resonance", 0.3f}, {"filter_drive", 1.5f}, {"filter_env_amount", 0.7f},
@@ -354,13 +523,13 @@ void LittleSynthProcessor::createFactoryPresets()
     factoryPresets_.add(makePreset("Lead", {
         // Osc 1: Sawtooth
         {"osc1_waveform",  2.0f}, {"osc1_detune", 0.0f}, {"osc1_octave", 2.0f},
-        {"osc1_level",     0.8f}, {"osc1_pulse_width", 0.5f},
+        {"osc1_level",     0.8f}, {"osc1_pulse_width", 0.5f}, {"osc1_on", 1.0f},
         // Osc 2: Square, slight detune for thickness
         {"osc2_waveform",  3.0f}, {"osc2_detune", 5.0f}, {"osc2_octave", 2.0f},
-        {"osc2_level",     0.5f}, {"osc2_pulse_width", 0.5f},
+        {"osc2_level",     0.5f}, {"osc2_pulse_width", 0.5f}, {"osc2_on", 1.0f},
         // Osc 3: Sine one octave up for brightness
         {"osc3_waveform",  0.0f}, {"osc3_detune", 0.0f}, {"osc3_octave", 3.0f},
-        {"osc3_level",     0.2f}, {"osc3_pulse_width", 0.5f},
+        {"osc3_level",     0.2f}, {"osc3_pulse_width", 0.5f}, {"osc3_on", 1.0f},
         // Filter: resonant lowpass
         {"filter_mode",    0.0f}, {"filter_slope", 1.0f}, {"filter_cutoff", 3000.0f},
         {"filter_resonance", 0.6f}, {"filter_drive", 1.2f}, {"filter_env_amount", 0.4f},
@@ -385,13 +554,13 @@ void LittleSynthProcessor::createFactoryPresets()
     factoryPresets_.add(makePreset("Ambient", {
         // Osc 1: Sine
         {"osc1_waveform",  0.0f}, {"osc1_detune", 0.0f}, {"osc1_octave", 2.0f},
-        {"osc1_level",     0.8f}, {"osc1_pulse_width", 0.5f},
+        {"osc1_level",     0.8f}, {"osc1_pulse_width", 0.5f}, {"osc1_on", 1.0f},
         // Osc 2: Triangle, slightly detuned
         {"osc2_waveform",  1.0f}, {"osc2_detune", 3.0f}, {"osc2_octave", 2.0f},
-        {"osc2_level",     0.5f}, {"osc2_pulse_width", 0.5f},
+        {"osc2_level",     0.5f}, {"osc2_pulse_width", 0.5f}, {"osc2_on", 1.0f},
         // Osc 3: Sine, octave up for shimmer
         {"osc3_waveform",  0.0f}, {"osc3_detune", -5.0f}, {"osc3_octave", 3.0f},
-        {"osc3_level",     0.25f}, {"osc3_pulse_width", 0.5f},
+        {"osc3_level",     0.25f}, {"osc3_pulse_width", 0.5f}, {"osc3_on", 1.0f},
         // Filter: gentle lowpass, wide open
         {"filter_mode",    0.0f}, {"filter_slope", 0.0f}, {"filter_cutoff", 8000.0f},
         {"filter_resonance", 0.1f}, {"filter_drive", 1.0f}, {"filter_env_amount", 0.1f},
@@ -457,6 +626,9 @@ void LittleSynthProcessor::setCurrentProgram(int index)
                 param->setValueNotifyingHost(normalisedValue);
             }
         }
+
+        // Invalidate parameter cache so all changes propagate on next processBlock
+        paramCache_ = ParamCache{};
     }
 }
 

@@ -15,6 +15,11 @@ OscillatorPanel::OscillatorPanel(juce::AudioProcessorValueTreeState& apvts, int 
     titleLabel_.setFont(juce::Font(12.0f, juce::Font::bold));
     titleLabel_.setJustificationType(juce::Justification::centred);
 
+    // On/Off toggle
+    addAndMakeVisible(onToggle_);
+    onAttachment_ = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        apvts, prefix_ + "on", onToggle_);
+
     // Waveform
     addAndMakeVisible(waveformCombo_);
     waveformCombo_.addItemList({ "Sine", "Triangle", "Sawtooth", "Square", "Noise" }, 1);
@@ -79,8 +84,11 @@ void OscillatorPanel::paint(juce::Graphics& g)
     g.setColour(juce::Colour(CustomLookAndFeel::kPanelBg).withAlpha(0.85f));
     g.fillRoundedRectangle(bounds, 5.0f);
 
-    // Border
-    g.setColour(juce::Colour(CustomLookAndFeel::kAccentBlue));
+    // Border (dimmed when oscillator is off)
+    if (onToggle_.getToggleState())
+        g.setColour(juce::Colour(CustomLookAndFeel::kAccentBlue));
+    else
+        g.setColour(juce::Colour(CustomLookAndFeel::kAccentBlue).withAlpha(0.3f));
     g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
 }
 
@@ -88,8 +96,10 @@ void OscillatorPanel::resized()
 {
     auto area = getLocalBounds().reduced(6);
 
-    // Title at top
-    titleLabel_.setBounds(area.removeFromTop(16));
+    // Title row: toggle on the left, title text fills the rest
+    auto titleArea = area.removeFromTop(16);
+    onToggle_.setBounds(titleArea.removeFromLeft(20).reduced(2));
+    titleLabel_.setBounds(titleArea);
 
     // Waveform combo
     waveformCombo_.setBounds(area.removeFromTop(20));

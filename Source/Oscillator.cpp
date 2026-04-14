@@ -53,11 +53,13 @@ void SynthOscillator::setFrequency(float freqHz)
 void SynthOscillator::setDetune(float cents)
 {
     detuneCents_ = cents;
+    freqMultiplierDirty_ = true;
 }
 
 void SynthOscillator::setOctave(int octaves)
 {
     octaveShift_ = octaves;
+    freqMultiplierDirty_ = true;
 }
 
 void SynthOscillator::setLevel(float level)
@@ -70,13 +72,32 @@ void SynthOscillator::setPulseWidth(float pw)
     pulseWidth_ = std::clamp(pw, 0.01f, 0.99f);
 }
 
+void SynthOscillator::resetPhase()
+{
+    basicOsc_->Reset();
+    // VariableShapeOscillator has no Reset() — re-init to clear phase
+    varShapeOsc_->Init(static_cast<float>(sampleRate_));
+    varShapeOsc_->SetWaveshape(0.0f);
+    varShapeOsc_->SetPW(0.5f);
+    noisePhase_ = 0.0f;
+
+    // Invalidate caches so next process() re-sends params to DaisySP
+    lastSetFreq_ = -1.0f;
+    lastSetWaveform_ = static_cast<Waveform>(-1);
+    lastSetPW_ = -1.0f;
+}
+
 // ---------------------------------------------------------------
 // Audio processing
 // ---------------------------------------------------------------
 
 float SynthOscillator::process()
 {
-    const float tunedFreq = applyDetune(frequency_);
+    // Recompute multiplier only when detune/octave changed
+    if (freqMultiplierDirty_)
+        updateFreqMultiplier();
+
+    const float tunedFreq = frequency_ * freqMultiplier_;
 
     float sample = 0.0f;
 
@@ -84,35 +105,68 @@ float SynthOscillator::process()
     {
     case Sine:
     {
-        basicOsc_->SetFreq(tunedFreq);
-        basicOsc_->SetWaveform(daisysp::Oscillator::WAVE_SIN);
+        if (lastSetFreq_ != tunedFreq)
+        {
+            basicOsc_->SetFreq(tunedFreq);
+            lastSetFreq_ = tunedFreq;
+        }
+        if (lastSetWaveform_ != Sine)
+        {
+            basicOsc_->SetWaveform(daisysp::Oscillator::WAVE_SIN);
+            lastSetWaveform_ = Sine;
+        }
         sample = basicOsc_->Process();
         break;
     }
     case Triangle:
     {
-        basicOsc_->SetFreq(tunedFreq);
-        basicOsc_->SetWaveform(daisysp::Oscillator::WAVE_TRI);
+        if (lastSetFreq_ != tunedFreq)
+        {
+            basicOsc_->SetFreq(tunedFreq);
+            lastSetFreq_ = tunedFreq;
+        }
+        if (lastSetWaveform_ != Triangle)
+        {
+            basicOsc_->SetWaveform(daisysp::Oscillator::WAVE_TRI);
+            lastSetWaveform_ = Triangle;
+        }
         sample = basicOsc_->Process();
         break;
     }
     case Sawtooth:
     {
-        // VariableShapeOscillator: waveshape 0 = saw/ramp/tri family
-        // pw controls the mix between saw and triangle.
-        // pw=1.0 gives saw, pw=0.0 gives triangle.
-        varShapeOsc_->SetFreq(tunedFreq);
-        varShapeOsc_->SetWaveshape(0.0f);
-        varShapeOsc_->SetPW(1.0f);
+        if (lastSetFreq_ != tunedFreq)
+        {
+            varShapeOsc_->SetFreq(tunedFreq);
+            lastSetFreq_ = tunedFreq;
+        }
+        if (lastSetWaveform_ != Sawtooth)
+        {
+            varShapeOsc_->SetWaveshape(0.0f);
+            varShapeOsc_->SetPW(1.0f);
+            lastSetWaveform_ = Sawtooth;
+            lastSetPW_ = 1.0f;
+        }
         sample = varShapeOsc_->Process();
         break;
     }
     case Square:
     {
-        // VariableShapeOscillator: waveshape 1 = square mode
-        varShapeOsc_->SetFreq(tunedFreq);
-        varShapeOsc_->SetWaveshape(1.0f);
-        varShapeOsc_->SetPW(pulseWidth_);
+        if (lastSetFreq_ != tunedFreq)
+        {
+            varShapeOsc_->SetFreq(tunedFreq);
+            lastSetFreq_ = tunedFreq;
+        }
+        if (lastSetWaveform_ != Square)
+        {
+            varShapeOsc_->SetWaveshape(1.0f);
+            lastSetWaveform_ = Square;
+        }
+        if (lastSetPW_ != pulseWidth_)
+        {
+            varShapeOsc_->SetPW(pulseWidth_);
+            lastSetPW_ = pulseWidth_;
+        }
         sample = varShapeOsc_->Process();
         break;
     }
@@ -133,19 +187,13 @@ float SynthOscillator::process()
 // Internal helpers
 // ---------------------------------------------------------------
 
-float SynthOscillator::applyDetune(float freq) const
+void SynthOscillator::updateFreqMultiplier()
 {
-    // Apply octave shift: multiply by 2^octaveShift_
+    float mult = 1.0f;
     if (octaveShift_ != 0)
-    {
-        freq *= std::pow(2.0f, static_cast<float>(octaveShift_));
-    }
-
-    // Apply detune in cents: multiply by 2^(cents/1200)
+        mult *= std::pow(2.0f, static_cast<float>(octaveShift_));
     if (detuneCents_ != 0.0f)
-    {
-        freq *= std::pow(2.0f, detuneCents_ / 1200.0f);
-    }
-
-    return freq;
+        mult *= std::pow(2.0f, detuneCents_ / 1200.0f);
+    freqMultiplier_ = mult;
+    freqMultiplierDirty_ = false;
 }
