@@ -1,0 +1,110 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch dependencies
+        run: |
+          git clone https://github.com/juce-framework/JUCE.git ThirdParty/JUCE --depth 1
+          git clone https://github.com/electro-smith/DaisySP.git ThirdParty/DaisySP --depth 1
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Package
+        run: bash scripts/package_macos.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: littleSynth-macOS
+          path: dist/littleSynth-macOS.dmg
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/littleSynth-macOS.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch dependencies
+        shell: bash
+        run: |
+          git clone https://github.com/juce-framework/JUCE.git ThirdParty/JUCE --depth 1
+          git clone https://github.com/electro-smith/DaisySP.git ThirdParty/DaisySP --depth 1
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Package
+        shell: pwsh
+        run: pwsh scripts/package_windows.ps1
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: littleSynth-Windows
+          path: dist/littleSynth-Windows.zip
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/littleSynth-Windows.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libfreetype6-dev libx11-dev \
+            libxrandr-dev libxcomposite-dev libxcursor-dev libxinerama-dev \
+            libgl1-mesa-dev libwebkit2gtk-4.1-dev libjuce-linux-6
+
+      - name: Fetch dependencies
+        run: |
+          git clone https://github.com/juce-framework/JUCE.git ThirdParty/JUCE --depth 1
+          git clone https://github.com/electro-smith/DaisySP.git ThirdParty/DaisySP --depth 1
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Package
+        run: bash scripts/package_linux.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: littleSynth-Linux
+          path: dist/littleSynth-Linux.tar.gz
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/littleSynth-Linux.tar.gz
