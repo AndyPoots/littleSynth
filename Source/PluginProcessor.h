@@ -62,32 +62,33 @@ private:
     std::array<float, kOutputFifoSize> outputFifo_{};
     std::atomic<int> outputWritePos_{0};
 
-    // Cached parameter values — only push to voices when changed
+    // Cached parameter values — only push to voices when changed.
+    // Defaults use sentinel values so the first processBlock pushes everything.
     struct ParamCache
     {
-        int   oscWaveform[3]  = { 0, 0, 0 };
-        float oscDetune[3]    = {};
-        int   oscOctave[3]    = { 2, 2, 2 };
-        float oscLevel[3]     = { 1.0f, 0.0f, 0.0f };
-        float oscPulseWidth[3] = { 0.5f, 0.5f, 0.5f };
-        bool  oscOn[3]        = { true, false, false };
+        int   oscWaveform[3]  = { -1, -1, -1 };
+        float oscDetune[3]    = { -999.0f, -999.0f, -999.0f };
+        int   oscOctave[3]    = { -1, -1, -1 };
+        float oscLevel[3]     = { -1.0f, -1.0f, -1.0f };
+        float oscPulseWidth[3] = { -1.0f, -1.0f, -1.0f };
+        bool  oscOn[3]        = { true, true, true }; // force false→true or true→false mismatch
 
-        int   filterMode      = 0;
-        int   filterSlope     = 1;
-        float filterCutoff    = 5000.0f;
-        float filterResonance = 0.0f;
-        float filterDrive     = 1.0f;
-        float filterEnvAmount = 0.0f;
-        float filterKeyTracking = 0.0f;
+        int   filterMode      = -1;
+        int   filterSlope     = -1;
+        float filterCutoff    = -1.0f;
+        float filterResonance = -1.0f;
+        float filterDrive     = -1.0f;
+        float filterEnvAmount = -999.0f;
+        float filterKeyTracking = -1.0f;
 
-        float envAttack[3]    = { 0.01f, 0.01f, 0.01f };
-        float envDecay[3]     = { 0.1f, 0.1f, 0.1f };
-        float envSustain[3]   = { 0.7f, 0.0f, 0.0f };
-        float envRelease[3]   = { 0.3f, 0.3f, 0.3f };
+        float envAttack[3]    = { -1.0f, -1.0f, -1.0f };
+        float envDecay[3]     = { -1.0f, -1.0f, -1.0f };
+        float envSustain[3]   = { -1.0f, -1.0f, -1.0f };
+        float envRelease[3]   = { -1.0f, -1.0f, -1.0f };
 
-        int   lfoShape[2]     = { 0, 0 };
-        float lfoRate[2]      = { 1.0f, 1.0f };
-        float lfoDepth[2]     = {};
+        int   lfoShape[2]     = { -1, -1 };
+        float lfoRate[2]      = { -1.0f, -1.0f };
+        float lfoDepth[2]     = { -1.0f, -1.0f };
     } paramCache_;
 
     void createFactoryPresets();

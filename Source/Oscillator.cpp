@@ -32,6 +32,8 @@ void SynthOscillator::init(double sampleRate)
     // Set sensible defaults
     basicOsc_->SetAmp(1.0f);
     basicOsc_->SetWaveform(daisysp::Oscillator::WAVE_SIN);
+    varShapeOsc_->SetSync(false);     // no sync — use slave_frequency_ directly
+    varShapeOsc_->SetSyncFreq(440.0f);
     varShapeOsc_->SetWaveshape(0.0f); // saw/ramp/tri mode
     varShapeOsc_->SetPW(0.5f);
 }
@@ -77,6 +79,8 @@ void SynthOscillator::resetPhase()
     basicOsc_->Reset();
     // VariableShapeOscillator has no Reset() — re-init to clear phase
     varShapeOsc_->Init(static_cast<float>(sampleRate_));
+    varShapeOsc_->SetSync(false);
+    varShapeOsc_->SetSyncFreq(440.0f);
     varShapeOsc_->SetWaveshape(0.0f);
     varShapeOsc_->SetPW(0.5f);
     noisePhase_ = 0.0f;
@@ -137,7 +141,7 @@ float SynthOscillator::process()
     {
         if (lastSetFreq_ != tunedFreq)
         {
-            varShapeOsc_->SetFreq(tunedFreq);
+            varShapeOsc_->SetSyncFreq(tunedFreq);
             lastSetFreq_ = tunedFreq;
         }
         if (lastSetWaveform_ != Sawtooth)
@@ -154,7 +158,7 @@ float SynthOscillator::process()
     {
         if (lastSetFreq_ != tunedFreq)
         {
-            varShapeOsc_->SetFreq(tunedFreq);
+            varShapeOsc_->SetSyncFreq(tunedFreq);
             lastSetFreq_ = tunedFreq;
         }
         if (lastSetWaveform_ != Square)
