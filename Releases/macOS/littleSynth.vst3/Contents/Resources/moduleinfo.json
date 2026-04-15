@@ -1,0 +1,48 @@
+{
+  "Name": "littleSynth",
+  "Version": "1.0.0",
+  "Factory Info": {
+    "Vendor": "littleSynth",
+    "URL": "",
+    "E-Mail": "",
+    "Flags": {
+      "Unicode": true,
+      "Classes Discardable": false,
+      "Component Non Discardable": false,
+    },
+  },
+  "Classes": [
+    {
+      "CID": "ABCDEF019182FAEB4C736E744C74536E",
+      "Category": "Audio Module Class",
+      "Name": "littleSynth",
+      "Vendor": "littleSynth",
+      "Version": "1.0.0",
+      "SDKVersion": "VST 3.8.0",
+      "Sub Categories": [
+        "Instrument",
+        "Synth",
+      ],
+      "Class Flags": 2,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+    {
+      "CID": "ABCDEF011234ABCD4C736E744C74536E",
+      "Category": "Component Controller Class",
+      "Name": "littleSynth",
+      "Vendor": "littleSynth",
+      "Version": "1.0.0",
+      "SDKVersion": "VST 3.8.0",
+      "Sub Categories": [
+        "Instrument",
+        "Synth",
+      ],
+      "Class Flags": 2,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+  ],
+}

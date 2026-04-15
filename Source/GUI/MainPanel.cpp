@@ -14,7 +14,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& apvts, LittleSynthProce
     addAndMakeVisible(synthNameLabel_);
     synthNameLabel_.setText("littleSynth", juce::dontSendNotification);
     synthNameLabel_.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kAccent));
-    synthNameLabel_.setFont(juce::Font(16.0f, juce::Font::bold));
+    synthNameLabel_.setFont(juce::Font(28.0f, juce::Font::bold | juce::Font::italic));
     synthNameLabel_.setJustificationType(juce::Justification::centredLeft);
 
     // Master level
@@ -26,7 +26,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& apvts, LittleSynthProce
     addAndMakeVisible(masterLevelLabel_);
     masterLevelLabel_.setText("Master", juce::dontSendNotification);
     masterLevelLabel_.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-    masterLevelLabel_.setFont(9.0f);
+    masterLevelLabel_.setFont(juce::Font(11.0f, juce::Font::bold));
     masterLevelLabel_.setJustificationType(juce::Justification::centred);
 
     // Oscillator panels
@@ -84,27 +84,30 @@ void MainPanel::resized()
     // Outer padding — breathing room around everything
     bounds.reduce(10, 10);
 
-    // Top bar: 36px
-    auto topBar = bounds.removeFromTop(36);
-    synthNameLabel_.setBounds(topBar.removeFromLeft(140).reduced(4));
+    // Top bar: 48px
+    auto topBar = bounds.removeFromTop(48);
+    synthNameLabel_.setBounds(topBar.removeFromLeft(260).reduced(4));
     auto masterArea = topBar.removeFromRight(140);
     masterLevelLabel_.setBounds(masterArea.getX(), masterArea.getY(), 50, 36);
     masterLevelSlider_.setBounds(masterArea.getX() + 50, masterArea.getY() + 6, 80, 24);
 
-    // Bottom strip: effects 140px + padding
-    auto bottomStrip = bounds.removeFromBottom(140);
-    effectsPanel_->setBounds(bottomStrip.reduced(4));
-
-    // Visualizer fills remaining as background
-    visualizer_.setBounds(bounds);
-
-    // Now overlay panels on top — each column has generous inner padding
-
-    const int panelPad = 8;  // padding between sibling panels
-    const int outerPad = 6; // padding inside column edges
-
     // Left column: oscillators (~280px wide)
     auto leftCol = bounds.removeFromLeft(280);
+
+    // Far right column: effects (vertical stack)
+    auto effectsCol = bounds.removeFromRight(280);
+    effectsPanel_->setBounds(effectsCol.reduced(4));
+
+    // Env/LFO column (beside center)
+    auto envCol = bounds.removeFromRight(220);
+
+    // Visualizer fills center as background
+    visualizer_.setBounds(bounds);
+
+    const int panelPad = 8;
+    const int outerPad = 6;
+
+    // Left column: oscillators
     const int oscH = (leftCol.getHeight() - outerPad * 2 - panelPad * 2) / 3;
     for (int i = 0; i < 3; ++i)
     {
@@ -115,28 +118,27 @@ void MainPanel::resized()
             oscH);
     }
 
-    // Right column: envelopes + LFOs (~220px wide)
-    auto rightCol = bounds.removeFromRight(220);
-    const int envH = (rightCol.getHeight() - outerPad * 2 - panelPad * 4) / 5; // 3 envs + 2 LFOs
+    // Env/LFO column
+    const int envH = (envCol.getHeight() - outerPad * 2 - panelPad * 4) / 5;
     for (int i = 0; i < 3; ++i)
     {
         envPanels_[static_cast<size_t>(i)]->setBounds(
-            rightCol.getX() + outerPad,
-            rightCol.getY() + outerPad + i * (envH + panelPad),
-            rightCol.getWidth() - outerPad * 2,
+            envCol.getX() + outerPad,
+            envCol.getY() + outerPad + i * (envH + panelPad),
+            envCol.getWidth() - outerPad * 2,
             envH);
     }
     for (int i = 0; i < 2; ++i)
     {
         lfoPanels_[static_cast<size_t>(i)]->setBounds(
-            rightCol.getX() + outerPad,
-            rightCol.getY() + outerPad + (3 + i) * (envH + panelPad),
-            rightCol.getWidth() - outerPad * 2,
+            envCol.getX() + outerPad,
+            envCol.getY() + outerPad + (3 + i) * (envH + panelPad),
+            envCol.getWidth() - outerPad * 2,
             envH);
     }
 
     // Center column: Visualizer (top) + Filter (middle) + ModMatrix (bottom)
-    auto centerCol = bounds.reduced(outerPad);
+    auto centerCol = bounds;
     const int vizH = juce::jmin(120, centerCol.getHeight() / 4);
     visualizer_.setBounds(centerCol.getX() + outerPad, centerCol.getY() + outerPad,
                           centerCol.getWidth() - outerPad * 2, vizH);

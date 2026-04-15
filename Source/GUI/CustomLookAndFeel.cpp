@@ -94,7 +94,7 @@ void CustomLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int wi
             text = juce::String(val, 2);
 
         g.setColour(juce::Colour(kTextDim));
-        g.setFont(9.0f);
+        g.setFont(11.0f);
         g.drawText(text, (int)(centreX - innerRadius), (int)(centreY - 5.0f),
                    (int)(innerRadius * 2.0f), 10, juce::Justification::centred);
     }
@@ -163,8 +163,8 @@ void CustomLookAndFeel::drawComboBox(juce::Graphics& g, int width, int height, b
     g.fillRoundedRectangle(bounds.toFloat(), 3.0f);
 
     // Border
-    g.setColour(juce::Colour(kAccentBlue));
-    g.drawRoundedRectangle(bounds.toFloat(), 3.0f, 1.0f);
+    g.setColour(juce::Colour(kAccent));
+    g.drawRoundedRectangle(bounds.toFloat(), 3.0f, 1.5f);
 
     // Arrow
     const float arrowX = (float)buttonX + (float)buttonW * 0.5f;
@@ -232,12 +232,12 @@ void CustomLookAndFeel::getIdealPopupMenuItemSize(const juce::String& text, bool
 
 juce::Font CustomLookAndFeel::getComboBoxFont(juce::ComboBox&)
 {
-    return juce::Font(11.0f);
+    return juce::Font(12.0f);
 }
 
 juce::Font CustomLookAndFeel::getPopupMenuFont()
 {
-    return juce::Font(11.0f);
+    return juce::Font(12.0f);
 }
 
 void CustomLookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
@@ -246,7 +246,10 @@ void CustomLookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& 
 {
     auto bounds = button.getLocalBounds().toFloat();
     const float size = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.7f;
-    auto toggleBounds = bounds.withSizeKeepingCentre(size, size);
+    const float pad = 4.0f;
+
+    // Toggle square aligned to the left
+    auto toggleBounds = juce::Rectangle<float>(bounds.getX() + pad, bounds.getCentreY() - size * 0.5f, size, size);
 
     const bool isOn = button.getToggleState();
 
@@ -255,18 +258,18 @@ void CustomLookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& 
     g.fillRoundedRectangle(toggleBounds, 3.0f);
 
     // Border
-    g.setColour(juce::Colour(kAccentBlue));
-    g.drawRoundedRectangle(toggleBounds, 3.0f, 1.0f);
+    g.setColour(juce::Colour(kAccent));
+    g.drawRoundedRectangle(toggleBounds, 3.0f, 1.5f);
 
-    // Text after toggle
+    // Text after toggle, left-aligned
     auto buttonText = button.getButtonText();
     if (buttonText.isNotEmpty())
     {
         g.setColour(juce::Colour(kText));
-        g.setFont(10.0f);
+        g.setFont(juce::Font(13.0f, juce::Font::bold));
         g.drawText(buttonText,
                    (int)(toggleBounds.getRight() + 4.0f), (int)bounds.getY(),
-                   (int)(bounds.getWidth() - size - 8.0f), (int)bounds.getHeight(),
+                   (int)(bounds.getRight() - toggleBounds.getRight() - 4.0f), (int)bounds.getHeight(),
                    juce::Justification::centredLeft);
     }
 }
@@ -292,17 +295,17 @@ void CustomLookAndFeel::drawGroupComponentOutline(juce::Graphics& g, int width, 
 {
     // Fill background
     g.setColour(juce::Colour(kPanelBg).withAlpha(0.8f));
-    g.fillRoundedRectangle(0.0f, 0.0f, (float)width, (float)height, 5.0f);
+    g.fillRoundedRectangle(0.0f, 0.0f, (float)width, (float)height, 8.0f);
 
     // Border
-    g.setColour(juce::Colour(kAccentBlue));
-    g.drawRoundedRectangle(1.0f, 1.0f, (float)(width - 2), (float)(height - 2), 5.0f, 1.0f);
+    g.setColour(juce::Colour(kAccent));
+    g.drawRoundedRectangle(1.0f, 1.0f, (float)(width - 2), (float)(height - 2), 8.0f, 2.0f);
 
     // Title
     if (text.isNotEmpty())
     {
         g.setColour(juce::Colour(kAccent));
-        g.setFont(juce::Font(juce::FontOptions().withHeight(11.0f).withStyle("Bold")));
+        g.setFont(juce::Font(juce::FontOptions().withHeight(13.0f).withStyle("Bold")));
         g.drawText(text, 8, 3, width - 16, 16, juce::Justification::centredLeft);
     }
 }

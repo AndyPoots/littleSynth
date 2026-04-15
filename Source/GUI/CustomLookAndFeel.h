@@ -20,6 +20,7 @@ public:
     static constexpr uint32_t kTextDim       = 0xFF909090;
     static constexpr uint32_t kTrackBg       = 0xFF1E1E1E;
     static constexpr uint32_t kKnobBg        = 0xFF1E1E1E;
+    static constexpr uint32_t kNeonPink      = 0xFFFF10F0;
 
     // Rotary slider
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,

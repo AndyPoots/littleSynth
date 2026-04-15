@@ -12,8 +12,8 @@ OscillatorPanel::OscillatorPanel(juce::AudioProcessorValueTreeState& apvts, int 
     addAndMakeVisible(titleLabel_);
     titleLabel_.setText("OSC " + juce::String(index + 1), juce::dontSendNotification);
     titleLabel_.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kAccent));
-    titleLabel_.setFont(juce::Font(12.0f, juce::Font::bold));
-    titleLabel_.setJustificationType(juce::Justification::centred);
+    titleLabel_.setFont(juce::Font(14.0f, juce::Font::bold));
+    titleLabel_.setJustificationType(juce::Justification::centredLeft);
 
     // On/Off toggle
     addAndMakeVisible(onToggle_);
@@ -68,7 +68,7 @@ OscillatorPanel::OscillatorPanel(juce::AudioProcessorValueTreeState& apvts, int 
     // Style labels
     auto styleLabel = [](juce::Label& l) {
         l.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        l.setFont(9.0f);
+        l.setFont(juce::Font(14.0f, juce::Font::bold));
     };
     styleLabel(detuneLabel_);
     styleLabel(levelLabel_);
@@ -82,14 +82,14 @@ void OscillatorPanel::paint(juce::Graphics& g)
 
     // Background
     g.setColour(juce::Colour(CustomLookAndFeel::kPanelBg).withAlpha(0.85f));
-    g.fillRoundedRectangle(bounds, 5.0f);
+    g.fillRoundedRectangle(bounds, 8.0f);
 
     // Border (dimmed when oscillator is off)
     if (onToggle_.getToggleState())
-        g.setColour(juce::Colour(CustomLookAndFeel::kAccentBlue));
+        g.setColour(juce::Colour(CustomLookAndFeel::kAccent));
     else
-        g.setColour(juce::Colour(CustomLookAndFeel::kAccentBlue).withAlpha(0.3f));
-    g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
+        g.setColour(juce::Colour(CustomLookAndFeel::kAccent).withAlpha(0.6f));
+    g.drawRoundedRectangle(bounds, 8.0f, 2.0f);
 }
 
 void OscillatorPanel::resized()
@@ -100,6 +100,7 @@ void OscillatorPanel::resized()
     auto titleArea = area.removeFromTop(16);
     onToggle_.setBounds(titleArea.removeFromLeft(20).reduced(2));
     titleLabel_.setBounds(titleArea);
+    area.removeFromTop(3);
 
     // Waveform combo
     waveformCombo_.setBounds(area.removeFromTop(20));

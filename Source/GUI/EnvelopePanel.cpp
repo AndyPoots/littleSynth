@@ -11,8 +11,8 @@ EnvelopePanel::EnvelopePanel(juce::AudioProcessorValueTreeState& apvts,
     addAndMakeVisible(titleLabel_);
     titleLabel_.setText(titleText_, juce::dontSendNotification);
     titleLabel_.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kAccent));
-    titleLabel_.setFont(juce::Font(11.0f, juce::Font::bold));
-    titleLabel_.setJustificationType(juce::Justification::centred);
+    titleLabel_.setFont(juce::Font(14.0f, juce::Font::bold));
+    titleLabel_.setJustificationType(juce::Justification::centredLeft);
 
     // ADSR preview
     addAndMakeVisible(adsrPreview_);
@@ -60,7 +60,7 @@ EnvelopePanel::EnvelopePanel(juce::AudioProcessorValueTreeState& apvts,
     // Style labels
     auto styleLabel = [](juce::Label& l) {
         l.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        l.setFont(9.0f);
+        l.setFont(juce::Font(14.0f, juce::Font::bold));
     };
     styleLabel(attackLabel_);
     styleLabel(decayLabel_);
@@ -72,9 +72,9 @@ void EnvelopePanel::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     g.setColour(juce::Colour(CustomLookAndFeel::kPanelBg).withAlpha(0.85f));
-    g.fillRoundedRectangle(bounds, 5.0f);
-    g.setColour(juce::Colour(CustomLookAndFeel::kAccentBlue));
-    g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
+    g.fillRoundedRectangle(bounds, 8.0f);
+    g.setColour(juce::Colour(CustomLookAndFeel::kAccent));
+    g.drawRoundedRectangle(bounds, 8.0f, 2.0f);
 
     // Draw ADSR preview curve
     auto previewBounds = adsrPreview_.getBounds().toFloat().reduced(4.0f);
@@ -137,7 +137,8 @@ void EnvelopePanel::resized()
     auto area = getLocalBounds().reduced(6);
 
     // Title
-    titleLabel_.setBounds(area.removeFromTop(14));
+    titleLabel_.setBounds(area.removeFromTop(16));
+    area.removeFromTop(3);
 
     // ADSR preview
     adsrPreview_.setBounds(area.removeFromTop(40));
