@@ -10,8 +10,8 @@ EffectsPanel::EffectsPanel(juce::AudioProcessorValueTreeState& apvts, LittleSynt
     addAndMakeVisible(titleLabel_);
     titleLabel_.setText("EFFECTS", juce::dontSendNotification);
     titleLabel_.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kAccent));
-    titleLabel_.setFont(juce::Font(12.0f, juce::Font::bold));
-    titleLabel_.setJustificationType(juce::Justification::centred);
+    titleLabel_.setFont(juce::Font(14.0f, juce::Font::bold));
+    titleLabel_.setJustificationType(juce::Justification::centredLeft);
 
     createEQSection();           // 0
     createCompressorSection();   // 1
@@ -39,7 +39,7 @@ void EffectsPanel::createEQSection()
         auto lbl = std::make_unique<juce::Label>();
         lbl->setText(label, juce::dontSendNotification);
         lbl->setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        lbl->setFont(8.0f);
+        lbl->setFont(juce::Font(14.0f, juce::Font::bold));
         lbl->setJustificationType(juce::Justification::centred);
         addAndMakeVisible(*lbl);
         s.sliders.push_back(std::move(slider));
@@ -80,7 +80,7 @@ void EffectsPanel::createCompressorSection()
         auto lbl = std::make_unique<juce::Label>();
         lbl->setText(label, juce::dontSendNotification);
         lbl->setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        lbl->setFont(8.0f);
+        lbl->setFont(juce::Font(14.0f, juce::Font::bold));
         lbl->setJustificationType(juce::Justification::centred);
         addAndMakeVisible(*lbl);
         s.sliders.push_back(std::move(slider));
@@ -113,7 +113,7 @@ void EffectsPanel::createChorusSection()
         auto lbl = std::make_unique<juce::Label>();
         lbl->setText(label, juce::dontSendNotification);
         lbl->setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        lbl->setFont(8.0f);
+        lbl->setFont(juce::Font(14.0f, juce::Font::bold));
         lbl->setJustificationType(juce::Justification::centred);
         addAndMakeVisible(*lbl);
         s.sliders.push_back(std::move(slider));
@@ -143,7 +143,7 @@ void EffectsPanel::createPhaserSection()
         auto lbl = std::make_unique<juce::Label>();
         lbl->setText(label, juce::dontSendNotification);
         lbl->setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        lbl->setFont(8.0f);
+        lbl->setFont(juce::Font(14.0f, juce::Font::bold));
         lbl->setJustificationType(juce::Justification::centred);
         addAndMakeVisible(*lbl);
         s.sliders.push_back(std::move(slider));
@@ -174,7 +174,7 @@ void EffectsPanel::createFlangerSection()
         auto lbl = std::make_unique<juce::Label>();
         lbl->setText(label, juce::dontSendNotification);
         lbl->setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        lbl->setFont(8.0f);
+        lbl->setFont(juce::Font(14.0f, juce::Font::bold));
         lbl->setJustificationType(juce::Justification::centred);
         addAndMakeVisible(*lbl);
         s.sliders.push_back(std::move(slider));
@@ -205,7 +205,7 @@ void EffectsPanel::createDelaySection()
         auto lbl = std::make_unique<juce::Label>();
         lbl->setText(label, juce::dontSendNotification);
         lbl->setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        lbl->setFont(8.0f);
+        lbl->setFont(juce::Font(14.0f, juce::Font::bold));
         lbl->setJustificationType(juce::Justification::centred);
         addAndMakeVisible(*lbl);
         s.sliders.push_back(std::move(slider));
@@ -235,7 +235,7 @@ void EffectsPanel::createReverbSection()
         auto lbl = std::make_unique<juce::Label>();
         lbl->setText(label, juce::dontSendNotification);
         lbl->setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        lbl->setFont(8.0f);
+        lbl->setFont(juce::Font(14.0f, juce::Font::bold));
         lbl->setJustificationType(juce::Justification::centred);
         addAndMakeVisible(*lbl);
         s.sliders.push_back(std::move(slider));
@@ -266,7 +266,7 @@ void EffectsPanel::createDistortionSection()
         auto lbl = std::make_unique<juce::Label>();
         lbl->setText(label, juce::dontSendNotification);
         lbl->setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        lbl->setFont(8.0f);
+        lbl->setFont(juce::Font(14.0f, juce::Font::bold));
         lbl->setJustificationType(juce::Justification::centred);
         addAndMakeVisible(*lbl);
         s.sliders.push_back(std::move(slider));
@@ -378,9 +378,20 @@ void EffectsPanel::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     g.setColour(juce::Colour(CustomLookAndFeel::kPanelBg).withAlpha(0.85f));
-    g.fillRoundedRectangle(bounds, 5.0f);
-    g.setColour(juce::Colour(CustomLookAndFeel::kAccentBlue));
-    g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
+    g.fillRoundedRectangle(bounds, 8.0f);
+    g.setColour(juce::Colour(CustomLookAndFeel::kAccent));
+    g.drawRoundedRectangle(bounds, 8.0f, 2.0f);
+
+    // Draw individual borders around each effect section
+    for (int i = 0; i < 8; ++i)
+    {
+        auto sb = sectionBounds_[i].toFloat();
+        if (sb.getWidth() > 0 && sb.getHeight() > 0)
+        {
+            g.setColour(juce::Colour(CustomLookAndFeel::kAccent).withAlpha(0.6f));
+            g.drawRoundedRectangle(sb, 6.0f, 1.5f);
+        }
+    }
 }
 
 void EffectsPanel::resized()
@@ -389,33 +400,37 @@ void EffectsPanel::resized()
 
     // Title
     titleLabel_.setBounds(area.removeFromTop(16));
+    area.removeFromTop(3);
 
-    // Layout: 8 effect sections side by side
-    const int sectionW = area.getWidth() / 8;
-    const int knobSize = 32;
+    // Layout: 8 effect sections stacked vertically
+    const int sectionH = area.getHeight() / 8;
+    const int knobSize = 28;
     const int labelH = 10;
 
     for (int i = 0; i < 8; ++i)
     {
-        auto col = area.removeFromLeft(sectionW).reduced(2);
+        auto row = area.removeFromTop(sectionH).reduced(2);
         auto& s = sections_[i];
 
-        // Enable button at top
-        s.enableButton->setBounds(col.getX(), col.getY(), col.getWidth(), 18);
+        // Store bounds for per-effect border drawing
+        sectionBounds_[i] = row;
 
-        // Knobs
-        int y = col.getY() + 22;
-        int knobsPerRow = juce::jmax(1, col.getWidth() / (knobSize + 4));
+        // Enable button at top of row — full width for readable title
+        s.enableButton->setBounds(row.getX(), row.getY(), row.getWidth(), 18);
+
+        // Knobs laid out horizontally across the row
+        int y = row.getY() + 20;
+        int knobsPerRow = juce::jmax(1, row.getWidth() / (knobSize + 6));
         int knobIdx = 0;
 
         for (size_t k = 0; k < s.sliders.size(); ++k)
         {
             int colInRow = knobIdx % knobsPerRow;
             if (colInRow == 0 && knobIdx > 0)
-                y += knobSize + labelH + 2;
+                y += knobSize + labelH + 4;
 
-            int kx = col.getX() + colInRow * ((col.getWidth()) / knobsPerRow);
-            int kw = col.getWidth() / knobsPerRow;
+            int kx = row.getX() + colInRow * (row.getWidth() / knobsPerRow);
+            int kw = row.getWidth() / knobsPerRow;
 
             s.labels[k]->setBounds(kx, y, kw, labelH);
             s.sliders[k]->setBounds(kx + (kw - knobSize) / 2, y + labelH, knobSize, knobSize);

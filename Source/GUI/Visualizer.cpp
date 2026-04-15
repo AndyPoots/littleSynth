@@ -92,11 +92,11 @@ void Visualizer::paint(juce::Graphics& g)
 
     // Background
     g.setColour(juce::Colour(CustomLookAndFeel::kPanelBg));
-    g.fillRoundedRectangle(bounds, 4.0f);
+    g.fillRoundedRectangle(bounds, 8.0f);
 
     // Border
-    g.setColour(juce::Colour(CustomLookAndFeel::kAccent).withAlpha(0.3f));
-    g.drawRoundedRectangle(bounds, 4.0f, 1.0f);
+    g.setColour(juce::Colour(CustomLookAndFeel::kAccent));
+    g.drawRoundedRectangle(bounds, 8.0f, 2.0f);
 
     const float halfW = bounds.getWidth() * 0.5f;
     const float padding = 4.0f;
@@ -147,7 +147,7 @@ void Visualizer::paint(juce::Graphics& g)
 
         // Label
         g.setColour(juce::Colour(CustomLookAndFeel::kTextDim));
-        g.setFont(9.0f);
+        g.setFont(11.0f);
         g.drawText("OSC", oscBounds.getX() + 4, oscBounds.getY() + 2, 30, 12, juce::Justification::left);
     }
 
@@ -176,7 +176,7 @@ void Visualizer::paint(juce::Graphics& g)
 
         // Label
         g.setColour(juce::Colour(CustomLookAndFeel::kTextDim));
-        g.setFont(9.0f);
+        g.setFont(11.0f);
         g.drawText("FFT", specBounds.getX() + 4, specBounds.getY() + 2, 30, 12, juce::Justification::left);
     }
 }

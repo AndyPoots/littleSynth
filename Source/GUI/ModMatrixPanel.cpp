@@ -12,15 +12,15 @@ ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& apvts, Little
     addAndMakeVisible(titleLabel_);
     titleLabel_.setText("MOD MATRIX", juce::dontSendNotification);
     titleLabel_.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kAccent));
-    titleLabel_.setFont(juce::Font(12.0f, juce::Font::bold));
-    titleLabel_.setJustificationType(juce::Justification::centred);
+    titleLabel_.setFont(juce::Font(14.0f, juce::Font::bold));
+    titleLabel_.setJustificationType(juce::Justification::centredLeft);
 
     // Column headers
     auto makeHeader = [this](juce::Label& label, const juce::String& text) {
         addAndMakeVisible(label);
         label.setText(text, juce::dontSendNotification);
         label.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        label.setFont(juce::Font(8.0f, juce::Font::bold));
+        label.setFont(juce::Font(14.0f, juce::Font::bold));
         label.setJustificationType(juce::Justification::centred);
     };
     makeHeader(sourceHeader_, "SRC");
@@ -111,9 +111,9 @@ void ModMatrixPanel::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     g.setColour(juce::Colour(CustomLookAndFeel::kPanelBg).withAlpha(0.85f));
-    g.fillRoundedRectangle(bounds, 5.0f);
-    g.setColour(juce::Colour(CustomLookAndFeel::kAccentBlue));
-    g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
+    g.fillRoundedRectangle(bounds, 8.0f);
+    g.setColour(juce::Colour(CustomLookAndFeel::kAccent));
+    g.drawRoundedRectangle(bounds, 8.0f, 2.0f);
 }
 
 void ModMatrixPanel::resized()
@@ -122,6 +122,7 @@ void ModMatrixPanel::resized()
 
     // Title
     titleLabel_.setBounds(area.removeFromTop(16));
+    area.removeFromTop(3);
 
     // Column layout:
     // Source(100) | Dest(90) | Depth(flex) | Bipolar(30) | Active(30)

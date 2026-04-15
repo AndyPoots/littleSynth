@@ -8,8 +8,8 @@ FilterPanel::FilterPanel(juce::AudioProcessorValueTreeState& apvts)
     addAndMakeVisible(titleLabel_);
     titleLabel_.setText("FILTER", juce::dontSendNotification);
     titleLabel_.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kAccent));
-    titleLabel_.setFont(juce::Font(12.0f, juce::Font::bold));
-    titleLabel_.setJustificationType(juce::Justification::centred);
+    titleLabel_.setFont(juce::Font(14.0f, juce::Font::bold));
+    titleLabel_.setJustificationType(juce::Justification::centredLeft);
 
     // Mode
     addAndMakeVisible(modeCombo_);
@@ -76,7 +76,7 @@ FilterPanel::FilterPanel(juce::AudioProcessorValueTreeState& apvts)
     // Style labels
     auto styleLabel = [](juce::Label& l) {
         l.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
-        l.setFont(9.0f);
+        l.setFont(juce::Font(14.0f, juce::Font::bold));
     };
     styleLabel(cutoffLabel_);
     styleLabel(resonanceLabel_);
@@ -89,9 +89,9 @@ void FilterPanel::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     g.setColour(juce::Colour(CustomLookAndFeel::kPanelBg).withAlpha(0.85f));
-    g.fillRoundedRectangle(bounds, 5.0f);
-    g.setColour(juce::Colour(CustomLookAndFeel::kAccentBlue));
-    g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
+    g.fillRoundedRectangle(bounds, 8.0f);
+    g.setColour(juce::Colour(CustomLookAndFeel::kAccent));
+    g.drawRoundedRectangle(bounds, 8.0f, 2.0f);
 }
 
 void FilterPanel::resized()
@@ -100,6 +100,7 @@ void FilterPanel::resized()
 
     // Title
     titleLabel_.setBounds(area.removeFromTop(16));
+    area.removeFromTop(3);
 
     // Dropdowns row
     auto dropdownRow = area.removeFromTop(22);

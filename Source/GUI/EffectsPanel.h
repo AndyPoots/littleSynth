@@ -39,6 +39,7 @@ private:
 
     juce::Label titleLabel_;
     std::array<EffectSection, 8> sections_;
+    std::array<juce::Rectangle<int>, 8> sectionBounds_;
     juce::AudioProcessorValueTreeState& apvts_;
     LittleSynthProcessor& processor_;
 
