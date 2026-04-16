@@ -25,6 +25,11 @@ juce_add_plugin(littleSynth
 
 juce_generate_juce_header(littleSynth)
 
+# Embed factory preset files into the plugin binary
+file(GLOB_RECURSE PRESET_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Presets/*.preset")
+juce_add_binary_data(littleSynthPresets SOURCES ${PRESET_FILES})
+set_target_properties(littleSynthPresets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
 target_sources(littleSynth
     PRIVATE
         Source/PluginProcessor.cpp
@@ -46,7 +51,10 @@ target_sources(littleSynth
         Source/Effects/EQ.cpp
         Source/Effects/Compressor.cpp
         Source/EffectsChain.cpp
+        Source/PresetManager.cpp
         Source/GUI/CustomLookAndFeel.cpp
+        Source/GUI/PresetBar.cpp
+        Source/GUI/PresetBrowser.cpp
         Source/GUI/Visualizer.cpp
         Source/GUI/OscillatorPanel.cpp
         Source/GUI/FilterPanel.cpp
@@ -70,11 +78,13 @@ target_include_directories(littleSynth
     PRIVATE
         Source
         ThirdParty/DaisySP/Source
+        ${CMAKE_CURRENT_BINARY_DIR}/juce_binarydata_littleSynthPresets/JuceLibraryCode
 )
 
 target_link_libraries(littleSynth
     PRIVATE
         DaisySP
+        littleSynthPresets
         juce::juce_audio_utils
         juce::juce_dsp
     PUBLIC

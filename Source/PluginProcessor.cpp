@@ -5,6 +5,7 @@
 #include "Oscillator.h"
 #include "Filter.h"
 #include "LFO.h"
+#include "BinaryData.h"
 
 // ---------------------------------------------------------------
 // Construction / destruction
@@ -17,6 +18,7 @@ LittleSynthProcessor::LittleSynthProcessor()
     apvts_ = std::make_unique<juce::AudioProcessorValueTreeState>(
         *this, nullptr, "Parameters", createParameterLayout());
     createFactoryPresets();
+    presetManager_ = std::make_unique<PresetManager>(*apvts_, factoryPresets_, presetNames_);
 }
 
 LittleSynthProcessor::~LittleSynthProcessor() = default;
@@ -401,189 +403,57 @@ void LittleSynthProcessor::setStateInformation(const void* data, int sizeInBytes
 }
 
 // ---------------------------------------------------------------
-// Factory presets
+// Factory presets (loaded from embedded BinaryData)
 // ---------------------------------------------------------------
-
-namespace
-{
-
-// Helper to build a ValueTree preset from a list of (paramID, value) pairs.
-// Choice parameters are stored as their integer index (which is what APVTS expects).
-juce::ValueTree makePreset(const char* name, std::initializer_list<std::pair<const char*, float>> params)
-{
-    juce::ValueTree preset("Preset");
-    preset.setProperty("name", juce::String(name), nullptr);
-    for (const auto& [id, val] : params)
-        preset.setProperty(juce::Identifier(id), val, nullptr);
-    return preset;
-}
-
-} // anonymous namespace
 
 void LittleSynthProcessor::createFactoryPresets()
 {
-    // Waveform indices: 0=Sine, 1=Triangle, 2=Sawtooth, 3=Square, 4=Noise
-    // Octave indices:   0="-2", 1="-1", 2="0", 3="+1", 4="+2"
-    // Filter mode:      0=Lowpass, 1=Highpass, 2=Bandpass, 3=Notch
+    // Load factory presets from the embedded .preset files in BinaryData.
+    // Each file is an XML document with <Preset name="..." category="..."> root
+    // and <PARAM id="..." value="..."/> children. We build a ValueTree with
+    // properties (not children) so the existing loading code works unchanged.
+    for (int i = 0; i < BinaryData::namedResourceListSize; ++i)
+    {
+        int dataSize = 0;
+        const char* data = BinaryData::getNamedResource(BinaryData::namedResourceList[i], dataSize);
+        const char* originalPath = BinaryData::getNamedResourceOriginalFilename(BinaryData::namedResourceList[i]);
 
-    // --- 1. Init: basic sine wave, filter open ---
-    factoryPresets_.add(makePreset("Init", {
-        // Osc 1: Sine, center, level 1
-        {"osc1_waveform",  0.0f}, {"osc1_detune", 0.0f}, {"osc1_octave", 2.0f},
-        {"osc1_level",     1.0f}, {"osc1_pulse_width", 0.5f}, {"osc1_on", 1.0f},
-        // Osc 2: off
-        {"osc2_waveform",  0.0f}, {"osc2_detune", 0.0f}, {"osc2_octave", 2.0f},
-        {"osc2_level",     0.0f}, {"osc2_pulse_width", 0.5f}, {"osc2_on", 0.0f},
-        // Osc 3: off
-        {"osc3_waveform",  0.0f}, {"osc3_detune", 0.0f}, {"osc3_octave", 2.0f},
-        {"osc3_level",     0.0f}, {"osc3_pulse_width", 0.5f}, {"osc3_on", 0.0f},
-        // Filter: open lowpass
-        {"filter_mode",    0.0f}, {"filter_slope", 1.0f}, {"filter_cutoff", 20000.0f},
-        {"filter_resonance", 0.0f}, {"filter_drive", 1.0f}, {"filter_env_amount", 0.0f},
-        {"filter_key_tracking", 0.0f},
-        // Amp envelope: short
-        {"amp_env_attack", 0.01f}, {"amp_env_decay", 0.1f}, {"amp_env_sustain", 0.7f},
-        {"amp_env_release", 0.3f},
-        // Filter envelope
-        {"filter_env_attack", 0.01f}, {"filter_env_decay", 0.1f}, {"filter_env_sustain", 0.0f},
-        {"filter_env_release", 0.3f},
-        // Mod envelope
-        {"mod_env_attack", 0.01f}, {"mod_env_decay", 0.1f}, {"mod_env_sustain", 0.0f},
-        {"mod_env_release", 0.3f},
-        // LFOs
-        {"lfo1_shape", 0.0f}, {"lfo1_rate", 1.0f}, {"lfo1_depth", 0.0f},
-        {"lfo2_shape", 0.0f}, {"lfo2_rate", 1.0f}, {"lfo2_depth", 0.0f},
-        // Master
-        {"master_level", 0.7f}
-    }));
+        if (data == nullptr || dataSize <= 0)
+            continue;
 
-    // --- 2. Warm Pad: saw + detuned saw, lowpass filter, slow attack ---
-    factoryPresets_.add(makePreset("Warm Pad", {
-        // Osc 1: Sawtooth
-        {"osc1_waveform",  2.0f}, {"osc1_detune", 0.0f}, {"osc1_octave", 2.0f},
-        {"osc1_level",     0.7f}, {"osc1_pulse_width", 0.5f}, {"osc1_on", 1.0f},
-        // Osc 2: Sawtooth, detuned +7 cents
-        {"osc2_waveform",  2.0f}, {"osc2_detune", 7.0f}, {"osc2_octave", 2.0f},
-        {"osc2_level",     0.6f}, {"osc2_pulse_width", 0.5f}, {"osc2_on", 1.0f},
-        // Osc 3: Triangle, one octave down for body
-        {"osc3_waveform",  1.0f}, {"osc3_detune", 0.0f}, {"osc3_octave", 1.0f},
-        {"osc3_level",     0.3f}, {"osc3_pulse_width", 0.5f}, {"osc3_on", 1.0f},
-        // Filter: warm lowpass
-        {"filter_mode",    0.0f}, {"filter_slope", 1.0f}, {"filter_cutoff", 2000.0f},
-        {"filter_resonance", 0.2f}, {"filter_drive", 1.0f}, {"filter_env_amount", 0.3f},
-        {"filter_key_tracking", 0.5f},
-        // Amp envelope: slow attack for pad feel
-        {"amp_env_attack", 1.5f}, {"amp_env_decay", 1.0f}, {"amp_env_sustain", 0.8f},
-        {"amp_env_release", 2.0f},
-        // Filter envelope: slow opening
-        {"filter_env_attack", 1.0f}, {"filter_env_decay", 2.0f}, {"filter_env_sustain", 0.5f},
-        {"filter_env_release", 1.5f},
-        // Mod envelope
-        {"mod_env_attack", 0.5f}, {"mod_env_decay", 2.0f}, {"mod_env_sustain", 0.0f},
-        {"mod_env_release", 1.0f},
-        // LFOs: subtle vibrato via LFO1
-        {"lfo1_shape", 0.0f}, {"lfo1_rate", 5.0f}, {"lfo1_depth", 0.15f},
-        {"lfo2_shape", 0.0f}, {"lfo2_rate", 0.2f}, {"lfo2_depth", 0.2f},
-        // Master
-        {"master_level", 0.6f}
-    }));
+        auto xml = juce::XmlDocument::parse(juce::String(data, dataSize));
+        if (xml == nullptr || xml->getTagName() != "Preset")
+            continue;
 
-    // --- 3. Bass: single saw, low octave, lowpass with env ---
-    factoryPresets_.add(makePreset("Bass", {
-        // Osc 1: Sawtooth, one octave down
-        {"osc1_waveform",  2.0f}, {"osc1_detune", 0.0f}, {"osc1_octave", 1.0f},
-        {"osc1_level",     1.0f}, {"osc1_pulse_width", 0.5f}, {"osc1_on", 1.0f},
-        // Osc 2: Square, two octaves down for sub
-        {"osc2_waveform",  3.0f}, {"osc2_detune", 0.0f}, {"osc2_octave", 0.0f},
-        {"osc2_level",     0.4f}, {"osc2_pulse_width", 0.5f}, {"osc2_on", 1.0f},
-        // Osc 3: off
-        {"osc3_waveform",  0.0f}, {"osc3_detune", 0.0f}, {"osc3_octave", 2.0f},
-        {"osc3_level",     0.0f}, {"osc3_pulse_width", 0.5f}, {"osc3_on", 0.0f},
-        // Filter: tight lowpass with envelope
-        {"filter_mode",    0.0f}, {"filter_slope", 1.0f}, {"filter_cutoff", 500.0f},
-        {"filter_resonance", 0.3f}, {"filter_drive", 1.5f}, {"filter_env_amount", 0.7f},
-        {"filter_key_tracking", 0.3f},
-        // Amp envelope: punchy
-        {"amp_env_attack", 0.005f}, {"amp_env_decay", 0.4f}, {"amp_env_sustain", 0.4f},
-        {"amp_env_release", 0.2f},
-        // Filter envelope: plucky
-        {"filter_env_attack", 0.005f}, {"filter_env_decay", 0.3f}, {"filter_env_sustain", 0.1f},
-        {"filter_env_release", 0.2f},
-        // Mod envelope
-        {"mod_env_attack", 0.01f}, {"mod_env_decay", 0.5f}, {"mod_env_sustain", 0.0f},
-        {"mod_env_release", 0.3f},
-        // LFOs
-        {"lfo1_shape", 0.0f}, {"lfo1_rate", 1.0f}, {"lfo1_depth", 0.0f},
-        {"lfo2_shape", 0.0f}, {"lfo2_rate", 1.0f}, {"lfo2_depth", 0.0f},
-        // Master
-        {"master_level", 0.8f}
-    }));
+        juce::ValueTree preset("Preset");
+        preset.setProperty("name", xml->getStringAttribute("name"), nullptr);
 
-    // --- 4. Lead: saw + square, filter with resonance ---
-    factoryPresets_.add(makePreset("Lead", {
-        // Osc 1: Sawtooth
-        {"osc1_waveform",  2.0f}, {"osc1_detune", 0.0f}, {"osc1_octave", 2.0f},
-        {"osc1_level",     0.8f}, {"osc1_pulse_width", 0.5f}, {"osc1_on", 1.0f},
-        // Osc 2: Square, slight detune for thickness
-        {"osc2_waveform",  3.0f}, {"osc2_detune", 5.0f}, {"osc2_octave", 2.0f},
-        {"osc2_level",     0.5f}, {"osc2_pulse_width", 0.5f}, {"osc2_on", 1.0f},
-        // Osc 3: Sine one octave up for brightness
-        {"osc3_waveform",  0.0f}, {"osc3_detune", 0.0f}, {"osc3_octave", 3.0f},
-        {"osc3_level",     0.2f}, {"osc3_pulse_width", 0.5f}, {"osc3_on", 1.0f},
-        // Filter: resonant lowpass
-        {"filter_mode",    0.0f}, {"filter_slope", 1.0f}, {"filter_cutoff", 3000.0f},
-        {"filter_resonance", 0.6f}, {"filter_drive", 1.2f}, {"filter_env_amount", 0.4f},
-        {"filter_key_tracking", 0.7f},
-        // Amp envelope: snappy
-        {"amp_env_attack", 0.01f}, {"amp_env_decay", 0.2f}, {"amp_env_sustain", 0.8f},
-        {"amp_env_release", 0.15f},
-        // Filter envelope
-        {"filter_env_attack", 0.01f}, {"filter_env_decay", 0.4f}, {"filter_env_sustain", 0.3f},
-        {"filter_env_release", 0.2f},
-        // Mod envelope
-        {"mod_env_attack", 0.01f}, {"mod_env_decay", 0.3f}, {"mod_env_sustain", 0.0f},
-        {"mod_env_release", 0.2f},
-        // LFOs: vibrato
-        {"lfo1_shape", 0.0f}, {"lfo1_rate", 6.0f}, {"lfo1_depth", 0.1f},
-        {"lfo2_shape", 0.0f}, {"lfo2_rate", 1.0f}, {"lfo2_depth", 0.0f},
-        // Master
-        {"master_level", 0.7f}
-    }));
+        // Get category from the "category" XML attribute, or from the file path
+        juce::String category = xml->getStringAttribute("category");
+        if (category.isEmpty())
+        {
+            juce::String path(originalPath);
+            auto slashIdx = path.indexOfChar('/');
+            if (slashIdx >= 0)
+                category = path.substring(0, slashIdx);
+        }
+        preset.setProperty("category", category, nullptr);
 
-    // --- 5. Ambient: sine + triangle, reverb feel, slow attack ---
-    factoryPresets_.add(makePreset("Ambient", {
-        // Osc 1: Sine
-        {"osc1_waveform",  0.0f}, {"osc1_detune", 0.0f}, {"osc1_octave", 2.0f},
-        {"osc1_level",     0.8f}, {"osc1_pulse_width", 0.5f}, {"osc1_on", 1.0f},
-        // Osc 2: Triangle, slightly detuned
-        {"osc2_waveform",  1.0f}, {"osc2_detune", 3.0f}, {"osc2_octave", 2.0f},
-        {"osc2_level",     0.5f}, {"osc2_pulse_width", 0.5f}, {"osc2_on", 1.0f},
-        // Osc 3: Sine, octave up for shimmer
-        {"osc3_waveform",  0.0f}, {"osc3_detune", -5.0f}, {"osc3_octave", 3.0f},
-        {"osc3_level",     0.25f}, {"osc3_pulse_width", 0.5f}, {"osc3_on", 1.0f},
-        // Filter: gentle lowpass, wide open
-        {"filter_mode",    0.0f}, {"filter_slope", 0.0f}, {"filter_cutoff", 8000.0f},
-        {"filter_resonance", 0.1f}, {"filter_drive", 1.0f}, {"filter_env_amount", 0.1f},
-        {"filter_key_tracking", 0.2f},
-        // Amp envelope: very slow attack and release
-        {"amp_env_attack", 3.0f}, {"amp_env_decay", 2.0f}, {"amp_env_sustain", 0.6f},
-        {"amp_env_release", 4.0f},
-        // Filter envelope
-        {"filter_env_attack", 2.0f}, {"filter_env_decay", 3.0f}, {"filter_env_sustain", 0.4f},
-        {"filter_env_release", 3.0f},
-        // Mod envelope
-        {"mod_env_attack", 1.0f}, {"mod_env_decay", 4.0f}, {"mod_env_sustain", 0.3f},
-        {"mod_env_release", 3.0f},
-        // LFOs: slow modulation
-        {"lfo1_shape", 0.0f}, {"lfo1_rate", 0.3f}, {"lfo1_depth", 0.3f},
-        {"lfo2_shape", 1.0f}, {"lfo2_rate", 0.15f}, {"lfo2_depth", 0.25f},
-        // Master
-        {"master_level", 0.6f}
-    }));
+        // Convert each <PARAM id="..." value="..."/> into a ValueTree property
+        for (auto* paramEl : xml->getChildIterator())
+        {
+            if (paramEl->getTagName() == "PARAM")
+            {
+                auto id = paramEl->getStringAttribute("id");
+                auto val = static_cast<float>(paramEl->getDoubleAttribute("value"));
+                if (id.isNotEmpty())
+                    preset.setProperty(juce::Identifier(id), val, nullptr);
+            }
+        }
 
-    // Populate name list
-    for (const auto& preset : factoryPresets_)
-        presetNames_.add(preset.getProperty("name").toString());
+        factoryPresets_.add(preset);
+        presetNames_.add(preset.getProperty("name", "Unknown").toString());
+    }
 }
 
 // ---------------------------------------------------------------
@@ -612,7 +482,7 @@ void LittleSynthProcessor::setCurrentProgram(int index)
         for (int i = 0; i < preset.getNumProperties(); ++i)
         {
             auto propID = preset.getPropertyName(i);
-            if (propID.toString() == "name")
+            if (propID.toString() == "name" || propID.toString() == "category")
                 continue;
 
             auto paramID = propID.toString();

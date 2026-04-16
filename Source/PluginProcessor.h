@@ -4,6 +4,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "VoiceManager.h"
 #include "EffectsChain.h"
+#include "PresetManager.h"
 
 class LittleSynthProcessor : public juce::AudioProcessor
 {
@@ -41,6 +42,9 @@ public:
     VoiceManager& getSynth() { return synth_; }
     EffectsChain* getEffectsChain() { return &effectsChain_; }
 
+    // Preset manager
+    PresetManager& getPresetManager() { return *presetManager_; }
+
     /// Called from the audio thread: pushes a mono-mixed sample to the output FIFO
     void pushOutputSample(float sample);
 
@@ -56,6 +60,9 @@ private:
     int currentProgram_ = 0;
     juce::StringArray presetNames_;
     juce::Array<juce::ValueTree> factoryPresets_;
+
+    // Preset manager (handles factory + user presets)
+    std::unique_ptr<PresetManager> presetManager_;
 
     // Lock-free output FIFO for visualizer (power-of-2 size for cheap modulo)
     static constexpr int kOutputFifoSize = 4096;

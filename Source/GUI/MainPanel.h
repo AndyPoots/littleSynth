@@ -12,6 +12,8 @@
 #include "GUI/LFOPanel.h"
 #include "GUI/ModMatrixPanel.h"
 #include "GUI/EffectsPanel.h"
+#include "GUI/PresetBar.h"
+#include "GUI/PresetBrowser.h"
 
 class LittleSynthProcessor;
 
@@ -19,7 +21,7 @@ class MainPanel : public juce::Component
 {
 public:
     MainPanel(juce::AudioProcessorValueTreeState& apvts, LittleSynthProcessor& processor);
-    ~MainPanel() override = default;
+    ~MainPanel() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -30,13 +32,33 @@ public:
     void pushStateToProcessor();
 
 private:
+    /// Toggle the preset browser overlay on/off.
+    void togglePresetBrowser();
+
+    /// Close the preset browser if it's open.
+    void closePresetBrowser();
+
+    /// Global mouse listener to close browser on outside clicks.
+    void handleGlobalMouseDown(const juce::MouseEvent& e);
+
     CustomLookAndFeel lookAndFeel_;
+
+    // Mouse listener that forwards all child mouseDown events to MainPanel
+    struct GlobalMouseListener : public juce::MouseListener
+    {
+        MainPanel& owner;
+        explicit GlobalMouseListener(MainPanel& o) : owner(o) {}
+        void mouseDown(const juce::MouseEvent& e) override { owner.handleGlobalMouseDown(e); }
+    };
+    GlobalMouseListener globalMouseListener_;
 
     // Visualizer (background layer)
     Visualizer visualizer_;
 
     // Top bar
     juce::Label synthNameLabel_;
+    std::unique_ptr<PresetBar> presetBar_;
+    std::unique_ptr<PresetBrowser> presetBrowser_;
     juce::Slider masterLevelSlider_;
     juce::Label masterLevelLabel_;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> masterLevelAttachment_;
