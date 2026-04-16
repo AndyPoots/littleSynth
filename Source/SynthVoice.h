@@ -105,4 +105,9 @@ private:
     float fadeGain_ = 0.0f;
     bool isFadingOut_ = false;
     static constexpr float kFadeRate = 0.008f; // ~125 samples ≈ 2.8ms at 44.1kHz
+
+    // DC blocker (one-pole HPF at ~5 Hz to remove filter DC offset)
+    float dcBlocker_x_ = 0.0f;
+    float dcBlocker_y_ = 0.0f;
+    static constexpr float kDCBlockerCoeff = 0.995f;
 };

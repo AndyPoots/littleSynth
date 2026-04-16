@@ -45,6 +45,24 @@ Eight insert effects in a fixed-order chain, applied to the summed voice output:
 - Dark theme with animated rotary knobs and value arcs
 - Real-time oscilloscope and FFT spectrum analyzer background
 - Dedicated panels for oscillators, filter, envelopes, LFOs, modulation matrix, and effects
+- **Preset browser** — overlay panel with grouped category navigation and 40+ factory presets across 8 categories
+
+### Presets
+
+40 factory presets organized into 8 categories:
+
+| Category | Presets |
+|----------|---------|
+| Factory | Init |
+| Pads | Warm Pad, String Ensemble, Dark Atmosphere, Shimmer Pad, Ethereal Pad, Frozen Pad |
+| Bass | Bass, Sub Bass, Acid Bass, Reese Bass, Pluck Bass, Wobble Bass |
+| Lead | Lead, Supersaw Lead, Brass Lead, Pluck Lead, Siren Lead, Sync Lead |
+| Keys | Electric Piano, Clavinet, Bell Keys, Soft Keys, Digital Keys |
+| Organ | Church Organ, Jazz Organ, Rock Organ, Gospel Organ, Farfisa |
+| FX | Noise Sweep, Laser, Wind, Glitch, Impact |
+| Ambient | Ambient, Deep Drone, Crystal, Space Texture, Ocean Pad, Nebula |
+
+User presets can be saved and organized by category from within the plugin.
 
 ### Signal Flow
 
@@ -100,13 +118,14 @@ The VST3 plugin and Standalone app are built and automatically copied to your sy
 | Component | File | Description |
 |-----------|------|-------------|
 | Plugin Processor | `Source/PluginProcessor.h` | JUCE `AudioProcessor` — owns the voice manager, effects chain, and parameter tree |
+| Preset Manager | `Source/PresetManager.h` | Factory + user preset management, save/load, category scanning |
 | Voice Manager | `Source/VoiceManager.h` | Extends `juce::Synthesiser` with 16 voices and voice stealing |
 | Synth Voice | `Source/SynthVoice.h` | Single voice: 3 oscillators, filter, 3 envelopes, 2 LFOs, modulation matrix |
 | Parameters | `Source/Parameters.cpp` | 50+ parameters defined via `AudioProcessorValueTreeState` |
 | Mod Matrix | `Source/ModMatrix.h` | 16-slot source-to-destination mapping with bipolar/unipolar support |
 | Effects Chain | `Source/EffectsChain.h` | Manages the 8-effect insert chain |
 | DSP Wrappers | `Source/Oscillator.h`, `Filter.h`, `Envelope.h`, `LFO.h` | DaisySP DSP bound to JUCE parameters |
-| GUI | `Source/GUI/` | Panel-based dark theme with visualizer |
+| GUI | `Source/GUI/` | Panel-based dark theme with visualizer and preset browser |
 
 ### Compatibility
 

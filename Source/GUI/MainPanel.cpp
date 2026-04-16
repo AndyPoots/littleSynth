@@ -3,9 +3,12 @@
 #include "PluginProcessor.h"
 
 MainPanel::MainPanel(juce::AudioProcessorValueTreeState& apvts, LittleSynthProcessor& processor)
-    : processor_(processor), apvts_(apvts)
+    : globalMouseListener_(*this), processor_(processor), apvts_(apvts)
 {
     setLookAndFeel(&lookAndFeel_);
+
+    // Listen to all child mouse events so we can close the browser on outside clicks
+    addMouseListener(&globalMouseListener_, true);
 
     // Visualizer
     addAndMakeVisible(visualizer_);
@@ -28,6 +31,15 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& apvts, LittleSynthProce
     masterLevelLabel_.setColour(juce::Label::textColourId, juce::Colour(CustomLookAndFeel::kTextDim));
     masterLevelLabel_.setFont(juce::Font(11.0f, juce::Font::bold));
     masterLevelLabel_.setJustificationType(juce::Justification::centred);
+
+    // Preset bar
+    presetBar_ = std::make_unique<PresetBar>(processor.getPresetManager());
+    addAndMakeVisible(*presetBar_);
+    presetBar_->onOpenBrowser = [this]() { togglePresetBrowser(); };
+
+    // Preset browser (overlay, initially hidden)
+    presetBrowser_ = std::make_unique<PresetBrowser>(processor.getPresetManager());
+    addChildComponent(*presetBrowser_);
 
     // Oscillator panels
     for (int i = 0; i < 3; ++i)
@@ -66,6 +78,11 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& apvts, LittleSynthProce
     addAndMakeVisible(*effectsPanel_);
 }
 
+MainPanel::~MainPanel()
+{
+    removeMouseListener(&globalMouseListener_);
+}
+
 void MainPanel::pushStateToProcessor()
 {
     modMatrixPanel_->updateProcessorState();
@@ -88,6 +105,8 @@ void MainPanel::resized()
     auto topBar = bounds.removeFromTop(48);
     synthNameLabel_.setBounds(topBar.removeFromLeft(260).reduced(4));
     auto masterArea = topBar.removeFromRight(140);
+    // Preset bar fills the space between synth name and master volume
+    presetBar_->setBounds(topBar.reduced(4, 8));
     masterLevelLabel_.setBounds(masterArea.getX(), masterArea.getY(), 50, 36);
     masterLevelSlider_.setBounds(masterArea.getX() + 50, masterArea.getY() + 6, 80, 24);
 
@@ -151,4 +170,50 @@ void MainPanel::resized()
                                centerCol.getY() + outerPad + vizH + panelPad + filterH + panelPad,
                                centerCol.getWidth() - outerPad * 2,
                                centerCol.getHeight() - vizH - filterH - panelPad * 2 - outerPad * 2);
+
+    // Position the preset browser overlay directly below the preset bar
+    if (presetBrowser_ != nullptr)
+    {
+        auto barBounds = presetBar_->getBounds();
+        presetBrowser_->setBounds(barBounds.getX(), barBounds.getBottom() + 2,
+                                  barBounds.getWidth(), 420);
+    }
+}
+
+void MainPanel::togglePresetBrowser()
+{
+    if (presetBrowser_ == nullptr)
+        return;
+
+    if (presetBrowser_->isVisible())
+    {
+        presetBrowser_->dismiss();
+    }
+    else
+    {
+        presetBrowser_->setVisible(true);
+        presetBrowser_->toFront(true);
+    }
+}
+
+void MainPanel::closePresetBrowser()
+{
+    if (presetBrowser_ != nullptr)
+        presetBrowser_->dismiss();
+}
+
+void MainPanel::handleGlobalMouseDown(const juce::MouseEvent& e)
+{
+    if (presetBrowser_ == nullptr || !presetBrowser_->isVisible())
+        return;
+
+    // Convert event position to MainPanel local coordinates
+    auto localPos = getLocalPoint(e.eventComponent, e.getPosition());
+
+    // Close the browser if click is outside it and outside the preset bar
+    if (!presetBrowser_->getBounds().contains(localPos) &&
+        !presetBar_->getBounds().contains(localPos))
+    {
+        presetBrowser_->dismiss();
+    }
 }
