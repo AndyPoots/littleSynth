@@ -76,13 +76,15 @@ void SynthOscillator::setPulseWidth(float pw)
 
 void SynthOscillator::resetPhase()
 {
+    // Reset basic oscillator phase (sine, triangle)
     basicOsc_->Reset();
-    // VariableShapeOscillator has no Reset() — re-init to clear phase
-    varShapeOsc_->Init(static_cast<float>(sampleRate_));
-    varShapeOsc_->SetSync(false);
-    varShapeOsc_->SetSyncFreq(440.0f);
-    varShapeOsc_->SetWaveshape(0.0f);
-    varShapeOsc_->SetPW(0.5f);
+
+    // Do NOT re-initialize VariableShapeOscillator here. Init() resets
+    // next_sample_ to 0, causing Process() to return (2*0 - 1) = -1.0f —
+    // a full-scale transient on every note start. Instead, just invalidate
+    // the caches so process() re-sends the current parameters to DaisySP.
+    // The voice's fade-in ramp (fadeGain_ starts at 0) masks any phase
+    // discontinuity from continuing at the previous note's phase.
     noisePhase_ = 0.0f;
 
     // Invalidate caches so next process() re-sends params to DaisySP

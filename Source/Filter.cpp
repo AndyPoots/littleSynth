@@ -130,6 +130,58 @@ float SynthFilter::process(float input, float envelopeValue, float noteFreq)
 }
 
 // ---------------------------------------------------------------
+// Audio processing with external modulation
+// ---------------------------------------------------------------
+
+float SynthFilter::processWithMod(float input, float envelopeValue, float noteFreq,
+                                   float modCutoff, float modRes)
+{
+    // Use the modulated cutoff directly (caller has already applied semitone modulation)
+    float effectiveCutoff = modCutoff;
+
+    // Envelope modulation: envAmount * envelopeValue (0..1) scaled to octaves
+    if (envAmount_ != 0.0f)
+    {
+        float envMod = envelopeValue * envAmount_;
+        effectiveCutoff *= std::pow(2.0f, envMod * 4.0f);
+    }
+
+    // Key tracking: blend between fixed cutoff and note frequency
+    if (keyTracking_ != 0.0f)
+    {
+        effectiveCutoff = effectiveCutoff * (1.0f - keyTracking_)
+                        + noteFreq * keyTracking_;
+    }
+
+    // Clamp final cutoff to valid range
+    effectiveCutoff = std::clamp(effectiveCutoff, 10.0f, static_cast<float>(sampleRate_) * 0.49f);
+    float clampedRes = std::clamp(modRes, 0.0f, 1.0f);
+
+    if (mode_ == Lowpass || mode_ == Highpass || mode_ == Bandpass)
+    {
+        // Only update DaisySP params when values actually change
+        // (avoids redundant compute_coeffs every sample)
+        ladder_->SetFreq(effectiveCutoff);
+        ladder_->SetRes(clampedRes);
+        ladder_->SetInputDrive(drive_);
+        return ladder_->Process(input);
+    }
+
+    svf_->SetFreq(effectiveCutoff);
+    svf_->SetRes(clampedRes);
+    svf_->SetDrive(drive_);
+    svf_->Process(input);
+
+    switch (mode_)
+    {
+    case Notch:
+        return svf_->Notch();
+    default:
+        return svf_->Low();
+    }
+}
+
+// ---------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------
 

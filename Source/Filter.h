@@ -42,6 +42,12 @@ public:
 
     float process(float input, float envelopeValue = 0.0f, float noteFreq = 440.0f);
 
+    /** Process with externally modulated cutoff/resonance.
+        This avoids the caller having to set/restore base filter values each sample.
+    */
+    float processWithMod(float input, float envelopeValue, float noteFreq,
+                         float modCutoff, float modRes);
+
 private:
     // Map our Mode+Slope to the appropriate LadderFilter mode
     void updateLadderMode();

@@ -183,24 +183,16 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
         if (activeOscCount > 0)
             oscMix *= (1.0f / static_cast<float>(activeOscCount));
 
-        // 7. Get modulated filter parameters
+        // 7. Compute effective filter parameters (modulation is in semitones)
         float modCutoff = modMatrix_.getModulatedValue(ModMatrix::Destination::FilterCutoff, 0.0f);
         float modRes    = modMatrix_.getModulatedValue(ModMatrix::Destination::FilterResonance, 0.0f);
 
-        // Apply filter cutoff modulation (modCutoff is in semitones)
-        float baseCutoffFreq = filter_.getCutoff();  // Use current base cutoff
-        float modCutoffFreq  = baseCutoffFreq * std::pow(2.0f, modCutoff / 12.0f);
-        filter_.setCutoff(modCutoffFreq);
+        float baseCutoffFreq = filter_.getCutoff();
+        float effectiveCutoff = baseCutoffFreq * std::pow(2.0f, modCutoff / 12.0f);
+        float effectiveRes    = filter_.getResonance() + modRes;
 
-        // Apply filter resonance modulation
-        float baseRes = filter_.getResonance();
-        filter_.setResonance(baseRes + modRes);
-
-        float filtered = filter_.process(oscMix, filterEnv, currentFrequency_);
-
-        // Restore base filter values for next sample iteration
-        filter_.setCutoff(baseCutoffFreq);
-        filter_.setResonance(baseRes);
+        float filtered = filter_.processWithMod(oscMix, filterEnv, currentFrequency_,
+                                                 effectiveCutoff, effectiveRes);
 
         // 8. Get modulated LFO rates and depths
         float lfo1Rate  = modMatrix_.getModulatedValue(ModMatrix::Destination::LFO1Rate,  0.0f);
@@ -247,7 +239,12 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
         }
         sample *= fadeGain_;
 
-        // 11. Write stereo output
+        // 11. DC blocker: y[n] = x[n] - x[n-1] + R * y[n-1]
+        dcBlocker_y_ = sample - dcBlocker_x_ + kDCBlockerCoeff * dcBlocker_y_;
+        dcBlocker_x_ = sample;
+        sample = dcBlocker_y_;
+
+        // 12. Write stereo output
         for (int ch = 0; ch < numChannels; ++ch)
         {
             outputBuffer.addSample(ch, startSample + i, sample);
